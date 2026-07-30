@@ -1,0 +1,92 @@
+# FraudHeuristics rule set (docs/03). Pure rules, no model.
+# Each rule cites itself, so the reasoning shown to a user is auditable line by
+# line. Weights are estimated from the labelled corpus (docs/07), not vibes.
+#
+# correlation_group matters as much as strength: url_shortener, young_domain and
+# freemail all co-occur in the same attack kit, so they must not be summed as if
+# independent (ADR-0013).
+
+version: 1
+
+rules:
+  - id: upfront_fee_for_job
+    signal: contradicts
+    strength: 0.85
+    correlation_group: payment_demand
+    title: "Upfront fee for a job application"
+    rationale: "Legitimate employers do not charge candidates. Near-conclusive."
+    applies_to: [placement, other]
+
+  - id: personal_upi_vpa
+    signal: contradicts
+    strength: 0.80
+    correlation_group: payment_demand
+    title: "Payment to a personal UPI handle"
+    rationale: "Institutional and corporate collections do not route to personal VPAs."
+    applies_to: [placement, fee, scholarship, other]
+
+  - id: sender_domain_mismatch
+    signal: contradicts
+    strength: 0.70
+    correlation_group: identity_mismatch
+    title: "Sender domain does not match the claimed organisation"
+    rationale: "The message claims one organisation and originates from another."
+    applies_to: [placement, fee, exam, scholarship, other]
+
+  - id: personal_messaging_contact_only
+    signal: contradicts
+    strength: 0.60
+    correlation_group: identity_mismatch
+    title: "Contact only via a personal messaging account"
+    rationale: "Real drives route through institutional or corporate channels."
+    applies_to: [placement, scholarship, other]
+
+  - id: freemail_corporate_recruiting
+    signal: contradicts
+    strength: 0.55
+    correlation_group: identity_mismatch
+    title: "Free-mail address used for corporate recruiting"
+    rationale: "Corporate recruiting does not run from gmail/yahoo addresses."
+    applies_to: [placement, other]
+
+  - id: url_shortener_on_official_link
+    signal: contradicts
+    strength: 0.50
+    correlation_group: link_obfuscation
+    title: "URL shortener on a supposedly official link"
+    rationale: "Official announcements link to their own domain."
+    applies_to: [placement, fee, exam, scholarship, schedule, event, other]
+
+  - id: deadline_under_48h
+    signal: contradicts
+    strength: 0.35
+    correlation_group: urgency
+    title: "Deadline less than 48 hours from first sighting"
+    rationale: "Manufactured urgency. Weak alone, common in combination."
+    applies_to: [placement, fee, scholarship, other]
+
+  - id: limited_slots_register_now
+    signal: contradicts
+    strength: 0.30
+    correlation_group: urgency
+    title: "'Limited slots' paired with 'register now'"
+    rationale: "Standard scarcity template pairing."
+    applies_to: [placement, event, other]
+
+  # Supporting rules. A rule set that can only ever accuse is a rule set that
+  # will accuse a genuine notice (docs/06).
+  - id: official_domain_link
+    signal: supports
+    strength: 0.55
+    correlation_group: official_shape
+    title: "Links only to the institution's own domain"
+    rationale: "Consistent with a genuine institutional announcement."
+    applies_to: [placement, fee, exam, scholarship, schedule, event, other]
+
+  - id: no_payment_requested
+    signal: supports
+    strength: 0.30
+    correlation_group: official_shape
+    title: "No payment or personal data requested"
+    rationale: "Removes the mechanism by which this class of scam profits."
+    applies_to: [placement, exam, schedule, event, other]

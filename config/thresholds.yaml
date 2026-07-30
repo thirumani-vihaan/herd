@@ -1,0 +1,91 @@
+# Every threshold in HERD. None of these may appear as a literal in code.
+# Calibrated in T044 against the adversarial mutation set; if the data disagrees
+# with a value here, the data wins and an ADR records the change.
+
+strain:
+  # ADR-0007 - incremental assignment bands
+  same_strain: 0.88        # >= this: attach, serve cached verdict
+  mutation: 0.72           # >= this and < same_strain: child strain
+  # < mutation: new strain, full investigation
+  amount_tolerance: 0.20   # ADR-0008 hard gate: amounts within 20%
+
+cascade:
+  # ADR-0011 - |posterior| needed to exit each tier
+  exit:
+    tier0: 0.90
+    tier1: 0.85
+    tier2: 0.80
+  # Asymmetry: exiting toward FALSE is more expensive than toward UNVERIFIED,
+  # because a false accusation costs far more than a slow answer (ADR-0014).
+  false_exit_multiplier: 1.0     # applied to the exit bar when heading to FALSE
+  unverified_exit_multiplier: 0.85
+
+verdict:
+  # ADR-0014 - calibrated bands on P(false). UNVERIFIED is widest on purpose.
+  bands:
+    false_above: 0.90
+    misleading_above: 0.65
+    unverified_above: 0.20
+    # <= unverified_above -> TRUE
+  abstention_target:
+    lo: 0.15
+    hi: 0.35
+
+aggregation:
+  # ADR-0013 - within a correlation group only the strongest signal counts at
+  # full weight; the rest are discounted by this factor. Without it the
+  # posterior saturates at 0.99 on every scam.
+  correlated_discount: 0.30
+  prior_false: 0.35              # base rate of falsity among reported claims
+  max_abs_log_odds: 6.0          # hard clamp; keeps confidence away from 1.0
+
+  # Per-agent contradiction caps (docs/03). Support is uncapped where noted.
+  caps:
+    InstitutionalSource:
+      contradicts: 0.30          # colleges announce late; absence is weak
+      supports: 1.00             # finding the notice settles it
+    OfficialChannel:
+      contradicts: 0.55          # a careers page is a more complete record
+      supports: 1.00
+    StrainPrior:
+      contradicts: 0.45          # ADR-0026: can shorten, can never conclude
+      supports: 0.45
+
+  reliability:                   # learned from ground truth; updated by T104
+    FraudHeuristics: 1.00
+    TemplateProvenance: 1.00
+    DomainForensics: 0.90
+    URLSafety: 1.00
+    ContactForensics: 0.80
+    InstitutionalSource: 0.95
+    OfficialChannel: 0.95
+    OpenWebResearch: 0.70
+    StrainPrior: 0.85
+
+spread:
+  # ADR-0017 - the model is chosen by sample size, never by how it looks
+  tiers:
+    none_below: 5
+    bayesian_to: 20
+    logistic_to: 60
+    # > logistic_to -> seir_hawkes
+  interval_widening_no_message_time: 1.4   # ADR-0018 penalty for report-time only
+
+alerting:
+  # ADR-0019 - expected harm, not a threshold
+  harm_per_victim_inr: 750.0
+  fatigue_cost_per_alert: 0.05     # cost term INSIDE the rule, not a suppressor
+  fatigue_window_hours: 24
+  max_alerts_per_cohort_per_day: 3
+  unreached_floor: 5.0             # below this there is nobody left to warn
+
+latency_budget_ms:
+  cache_hit_p95: 300
+  tier0_conclusive: 2000
+  full_cascade: 20000
+  alert_fanout: 1000
+
+ingest:
+  idempotency_window_s: 60
+  max_image_bytes: 10485760
+  salt_rotation_days: 30

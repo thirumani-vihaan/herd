@@ -27,9 +27,11 @@ build/
 # --- Logs & local data ---
 *.log
 logs/
-data/cache/
-data/chroma_db/
-data/hf_cache/
+!logs/.gitkeep
+data/*
+!data/.gitkeep
+venv/
+fixtures/cassettes/*.jsonl
 
 # --- OS / editor ---
 .DS_Store
