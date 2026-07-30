@@ -25,6 +25,11 @@ down or slow, and college websites are neither fast nor reliable.
 opportunistic live check for the single most relevant page when the network is
 available and the snapshot is stale.
 
+The crawl targets are not hardcoded. They come from the active institution
+profile's `sources` block ([ADR-0026](0026-institution-profiles.md)), and the
+resulting index is scoped by `institution_id` — one institution's notice board
+is evidence about that institution and about nothing else.
+
 ## Reasoning
 
 Three arguments converge.

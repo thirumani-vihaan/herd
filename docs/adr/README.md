@@ -57,6 +57,7 @@ produces a new record that supersedes the old one.
 |---|---|---|
 | [0022](0022-single-process-v1.md) | Single process + SQLite for v1 | Accepted — supersedes initial choice |
 | [0023](0023-cassette-replay.md) | Cassette-based replay mode | Accepted |
+| [0026](0026-institution-profiles.md) | Institution as a loaded profile; strain memory global, evidence scoped | Accepted — supersedes initial choice |
 
 ### Policy
 | # | Decision | Status |

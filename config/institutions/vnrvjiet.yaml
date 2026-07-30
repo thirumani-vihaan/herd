@@ -1,0 +1,67 @@
+# =============================================================================
+# HERD institution profile — VNR VJIET (reference tenant)
+#
+# This is the profile HERD is developed and demonstrated against. It is a real
+# institution and every URL here is a real, public page.
+#
+# Blocks marked `verified: false` were assumed, not confirmed. They are usable
+# for reasoning but never shown to a user as fact. Confirm them against the
+# public site before treating them as ground truth.
+# =============================================================================
+
+id: vnrvjiet
+display_name: "VNR Vignana Jyothi Institute of Engineering and Technology"
+short_name: "VNR VJIET"
+
+locale:
+  primary_language: en
+  code_mixed: [te, hi]           # Telugu and Hindi appear mixed into messages
+  timezone: Asia/Kolkata
+  currency: INR
+
+domains:
+  official:
+    - vnrvjiet.ac.in
+  email:
+    verified: false
+    values:
+      - vnrvjiet.in
+
+# Confirmed public source. The crawler is expected to discover sibling notice
+# and circular pages from here rather than have them hardcoded — see ADR-0015.
+sources:
+  - id: placements
+    url: https://www.vnrvjiet.ac.in/placements
+    kind: html
+    topics: [placement, internship, recruitment, drive]
+    refresh: 6h
+    authority: 1.0
+    discover_links: true         # follow same-domain notice/circular links
+
+official_channels:
+  - kind: website
+    value: vnrvjiet.ac.in
+    note: "Primary notice board and placements page"
+
+# Assumed from the standard Indian engineering-college structure. Confirm
+# against the academics page before relying on the branch list.
+cohorts:
+  verified: false
+  dimensions:
+    - id: year
+      label: "Year of study"
+      values: ["1", "2", "3", "4"]
+    - id: branch
+      label: "Branch"
+      values: [CSE, IT, ECE, EEE, MECH, CIVIL, AUTO, EIE]
+
+# Left empty deliberately. A wrong calendar prior is worse than no prior,
+# because it shifts the posterior in a direction nobody can audit.
+calendar:
+  verified: false
+  windows: []
+
+payments:
+  verified: false
+  official_upi_handles: []
+  collects_fees_via_messaging: false

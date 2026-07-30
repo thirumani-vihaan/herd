@@ -1,0 +1,70 @@
+# =============================================================================
+# HERD institution profile — TEMPLATE
+#
+# Copy to config/institutions/<id>.yaml and fill in. `id` must match the
+# filename stem. See ADR-0026 and this directory's README.
+#
+# Mark any field you assumed rather than confirmed with `verified: false`
+# on its parent block.
+# =============================================================================
+
+id: example-institute            # [a-z0-9-]+, must equal the filename stem
+display_name: "Example Institute of Technology"
+short_name: "EIT"                # how it appears in alert copy
+
+locale:
+  primary_language: en           # ISO-639-1
+  code_mixed: []                 # other languages that appear mixed into messages
+  timezone: Asia/Kolkata         # IANA
+  currency: INR                  # ISO-4217; used for fee-amount reasoning
+
+# Domains that count as "the institution speaking". Used by the official-channel
+# agent and by the redirect-chain check.
+domains:
+  official: []                   # e.g. ["example.ac.in"]
+  email: []                      # e.g. ["example.ac.in", "students.example.ac.in"]
+
+# Pages the notice-board crawler ingests (ADR-0015). Ordered by how
+# authoritative they are for the topics they cover.
+sources: []
+  # - id: placements
+  #   url: https://example.ac.in/placements
+  #   kind: html                 # html | pdf_index | rss
+  #   topics: [placement, internship, recruitment]
+  #   refresh: 6h
+  #   authority: 1.0             # 0..1, multiplies supporting strength
+
+# Channels through which this institution genuinely communicates. Anything
+# claiming to be official from outside this list is a contradicting signal.
+official_channels: []
+  # - kind: website              # website | email_domain | telegram | phone
+  #   value: example.ac.in
+  #   note: "Primary notice board"
+
+# How this institution divides its population. Targeting reads these opaquely —
+# HERD assumes nothing about what a dimension means.
+cohorts:
+  verified: false
+  dimensions: []
+  # - id: year
+  #   label: "Year of study"
+  #   values: ["1", "2", "3", "4"]
+
+# Seasonal priors. A fee claim during a real fee window is less suspicious; a
+# placement claim outside drive season is more so. Optional — omit rather than
+# guess, an absent prior is neutral.
+calendar:
+  verified: false
+  windows: []
+  # - id: fee_window
+  #   label: "Semester fee collection"
+  #   months: [6, 7, 12, 1]
+  #   effect: fee_claims_more_plausible
+
+# Money facts. These drive the strongest heuristics in the payment agent, so
+# leave them empty rather than approximate.
+payments:
+  verified: false
+  official_upi_handles: []
+  # True for most institutions: fees are never collected over messaging apps.
+  collects_fees_via_messaging: false

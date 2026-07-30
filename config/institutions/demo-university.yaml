@@ -1,0 +1,67 @@
+# =============================================================================
+# HERD institution profile — SYNTHETIC
+#
+# ⚠ THIS INSTITUTION DOES NOT EXIST.
+#
+# It exists to prove one behaviour that cannot be demonstrated with a single
+# tenant: that a strain learned at one institution is recognised instantly at a
+# second one, while that second institution's *verdict* is still derived from
+# its own evidence (ADR-0026).
+#
+# Rules for this file:
+#   - It must never be presented, in a demo or a document, as a real campus.
+#   - Its `synthetic: true` flag is surfaced in the UI wherever its data appears.
+#   - Its sources are local fixtures, never network URLs, so nothing here can
+#     accidentally hit a real site.
+# =============================================================================
+
+id: demo-university
+display_name: "Demo University (synthetic)"
+short_name: "Demo University"
+synthetic: true
+
+locale:
+  primary_language: en
+  code_mixed: [hi]
+  timezone: Asia/Kolkata
+  currency: INR
+
+domains:
+  official:
+    - demo-university.invalid    # RFC 2606 reserved TLD; cannot resolve
+  email:
+    values:
+      - demo-university.invalid
+
+sources:
+  - id: notices
+    url: file://fixtures/institutions/demo-university/notices.html
+    kind: html
+    topics: [placement, fee, exam, scholarship]
+    refresh: never
+    authority: 1.0
+    discover_links: false
+
+official_channels:
+  - kind: website
+    value: demo-university.invalid
+    note: "Synthetic notice board fixture"
+
+cohorts:
+  verified: true                 # synthetic, therefore trivially correct
+  dimensions:
+    - id: programme
+      label: "Programme"
+      values: [UG, PG]
+    - id: department
+      label: "Department"
+      values: [Computing, Electronics, Mechanical, Management]
+
+calendar:
+  verified: true
+  windows: []
+
+payments:
+  verified: true
+  official_upi_handles: []
+  collects_fees_via_messaging: false

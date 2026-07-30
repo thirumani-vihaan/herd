@@ -43,13 +43,14 @@ not fact-checking.
               v
    +----------------------+
    |  strain matching     |---- already known? --> instant verdict (cache hit)
-   +----------+-----------+
+   +----------+-----------+          (here or at any other institution)
               | new strain
               v
    +----------------------------------------------+
-   |        autonomous investigation swarm         |
-   |  official source - careers page - domain age  |
-   |  fraud heuristics - URL safety - provenance   |
+   |     autonomous investigation cascade          |
+   |  T0 memory - T1 cheap deterministic checks    |
+   |  T2 targeted agents - T3 full synthesis       |
+   |  exits early, asymmetrically, when it can     |
    +------------------+---------------------------+
                       v
    +----------------------+
@@ -58,7 +59,8 @@ not fact-checking.
    +----------+-----------+
               v
    +----------------------+
-   |  spread model (SEIR) |--> alert *before* the projected peak
+   |  spread model        |--> alert *before* the projected peak
+   |  (tiered by sample n)|    on expected harm, not a threshold
    +----------+-----------+
               v
         pre-bunk push to those not yet reached
@@ -70,10 +72,10 @@ not fact-checking.
 |---|---|
 | **Ingestion** | Web upload + QR, Telegram bot, Android share-intent. Screenshot-first, because that's how forwards actually travel. |
 | **Claim extraction** | Turns messy code-mixed text into a structured, falsifiable claim. |
-| **Strain clustering** | Rumours *mutate* as they spread. Variants are grouped into one strain with a visible mutation tree. |
-| **Investigation swarm** | Parallel specialist agents return **evidence, not opinions** — official sources, the company's real careers page, domain age/WHOIS, URL safety, fraud heuristics, poster provenance. |
-| **Spread model** | SEIR fit over report timestamps → R₀, velocity, projected peak. Decides *when* to alert. |
-| **Pre-bunking** | Pushes inoculation to people in the predicted path who haven't seen it yet. |
+| **Strain clustering** | Rumours *mutate* as they spread. Variants are grouped into one strain with a visible mutation tree — incrementally, so a strain's identity never changes under it. |
+| **Investigation cascade** | Four tiers, cheapest first, with asymmetric early exit. Specialist agents return **evidence, not opinions** — official sources, the company's real careers page, domain age, URL safety, payment heuristics. The label is set by deterministic log-odds aggregation; the LLM only writes the prose. |
+| **Spread model** | Fits what the sample size can actually support — nothing under n=5, a Bayesian growth estimate to n=20, logistic beyond, full SEIR-Hawkes only past n=60. Everything is reported as an interval. |
+| **Pre-bunking** | Pushes inoculation to people in the predicted path who haven't seen it yet, when projected harm prevented exceeds projected harm caused. |
 | **Herd memory** | Verdicts cached by semantic fingerprint. Report #1 costs a full investigation; reports #2–#4000 cost a lookup. |
 
 ---
@@ -86,6 +88,18 @@ strength into a weakness:
 **The wider an attack spreads, the cheaper it becomes to neutralise.**
 
 One student's investigation becomes permanent immunity for everyone who follows.
+
+And that immunity does not stop at the campus boundary. Strain memory is
+**global**; institutional evidence is **scoped**. A scam template that cost one
+campus a full investigation is recognised instantly at the next one — while that
+campus's verdict is still derived from its own notice board, its own official
+channels, its own evidence. Share the pattern, scope the proof.
+
+The usual cold-start problem inverts: HERD is *most* valuable to the newest
+institution, because it arrives carrying everyone else's accumulated immunity.
+
+Nothing institution-specific lives in code. A new campus is one YAML file in
+[`config/institutions/`](config/institutions/README.md).
 
 ---
 
@@ -102,23 +116,27 @@ suspicious messages to a friend asking *"is this real?"*
 
 Full design documentation lives in [`docs/`](docs/) — architecture, data model,
 investigation cascade, spread model, intervention, trust & safety, evaluation,
-API, and non-goals — plus [26 architecture decision records](docs/adr/) covering
+API, and non-goals — plus [27 architecture decision records](docs/adr/) covering
 every significant fork with the options considered and the consequences accepted.
 
 ## Stack
 
-Python · FastAPI · Gemini (multimodal OCR + extraction + synthesis) ·
-LangGraph (investigation swarm) · sentence-transformers + HDBSCAN (strain
-clustering) · Chroma (herd memory) · SciPy (SEIR fit) · Redis Streams ·
-React + WebSocket dashboard
+Python · FastAPI · Gemini (multimodal OCR + extraction + prose) ·
+LangGraph (investigation cascade) · `paraphrase-multilingual-MiniLM-L12-v2`
+(code-mixed strain embedding) · Chroma (herd memory) · SciPy (tiered spread fit) ·
+SQLite/WAL behind storage interfaces · React + WebSocket dashboard
 
 ## Setup
 
 ```bash
-cp .env.example .env     # add your keys
+cp .env.example .env     # add your keys, pick HERD_INSTITUTION
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+To run against a different campus, copy
+`config/institutions/_template.yaml`, fill it in, and set `HERD_INSTITUTION` to
+its id. No code changes.
 
 ---
 

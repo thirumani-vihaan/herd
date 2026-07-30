@@ -6,12 +6,16 @@ crosses a layer.
 ## Entity relationships
 
 ```
-Reporter (pseudonymous)
-    |
-    | submits
-    v
+                       Institution (profile, config/institutions/*.yaml)
+                            |
+                            | scopes
+                            v
+Reporter (pseudonymous)     |
+    |                       |
+    | submits               |
+    v                       v
 Report ---------> Claim ---------> Strain <----- Verdict
-  (raw)          (structured)     (cluster)         ^
+  (raw)          (structured)     (GLOBAL)          ^
                                       |             |
                                       |             | built from
                                       v             |
@@ -25,6 +29,55 @@ One `Strain` has many `Report`s, exactly one current `Verdict`, one rolling
 `SpreadEstimate`, and zero or more `Alert`s. A `Strain` may have a parent strain
 (it is a mutation of it).
 
+**Scope is part of the model, not an afterthought.** `Report`, `Evidence`,
+`Verdict`, `SpreadEstimate`, `Alert` and `Cohort` all carry `institution_id`.
+`Strain` deliberately does not — strain identity is global, so a pattern learned
+at one institution is recognised at every other one, while the *conclusion* about
+it is always re-derived locally. See
+[ADR-0026](adr/0026-institution-profiles.md).
+
+---
+
+## Institution
+
+Not a database row in v1 — a validated profile loaded from
+`config/institutions/<id>.yaml` at boot and held immutable for the process
+lifetime. Modelled here because everything scoped points at it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `str` | `[a-z0-9-]+`, equals the filename stem |
+| `display_name` | `str` | full legal-ish name |
+| `short_name` | `str` | what appears in alert copy |
+| `synthetic` | `bool` | if true, surfaced as synthetic everywhere its data appears |
+| `locale` | `Locale` | primary language, code-mixed languages, tz, currency |
+| `domains` | `Domains` | official web and email domains |
+| `sources` | `list[Source]` | notice-board crawl targets (ADR-0015) |
+| `official_channels` | `list[Channel]` | how this institution genuinely speaks |
+| `cohorts` | `CohortSpec` | targeting dimensions, treated opaquely |
+| `calendar` | `CalendarSpec` | seasonal priors; empty is neutral |
+| `payments` | `PaymentSpec` | official UPI handles, fee-channel facts |
+
+Any block may carry `verified: false`, meaning the value was assumed rather than
+confirmed against a public source. Unverified values may inform reasoning but are
+never displayed to a user as fact, and the loader logs them at startup.
+
+### InstitutionSighting
+
+The one place a strain touches institutions. Lives on `Strain`, as a list.
+
+| Field | Type | Notes |
+|---|---|---|
+| `institution_id` | `str` | where it was seen |
+| `first_seen` | `datetime` | |
+| `report_count` | `int` | local volume |
+| `local_verdict` | `VerdictLabel \| None` | that institution's own conclusion |
+
+A sighting at another institution enters the local investigation as a single
+bounded `StrainPrior` signal in the aggregator
+([ADR-0013](adr/0013-deterministic-verdict-aggregation.md)). It can shorten an
+investigation. It can never, alone, produce a verdict.
+
 ---
 
 ## Report
@@ -34,6 +87,7 @@ The raw artifact a human handed us. Immutable.
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `ULID` | time-sortable; ordering matters for the spread model |
+| `institution_id` | `str` | scope key; present from the first migration (ADR-0026) |
 | `received_at` | `datetime` | server clock, UTC |
 | `channel` | `web \| telegram \| share_intent \| api` | |
 | `raw_text` | `str \| None` | if pasted/forwarded as text |

@@ -81,8 +81,13 @@ human responsible for the outcome."
 
 Reasonable and intended, but out of scope for v1:
 
-- Multi-institution federation with shared strain memory *(the strongest growth
-  path — campus #2 inherits campus #1's immunity on day one)*
+- Runtime multi-tenancy — per-request tenant resolution, per-tenant auth and
+  quotas. The *schema* is multi-tenant from day one and strain memory is already
+  global ([ADR-0026](adr/0026-institution-profiles.md)); what is deferred is
+  serving several institutions from one process, not the ability to.
+- Federated deployments gossiping strain records to each other, which needs a
+  trust model between peers that is not worth designing before there is a second
+  deployment.
 - WhatsApp Business Cloud API ingestion (blocked on Meta business verification)
 - On-device inference for fully offline recognition
 - Voice-note claims (audio → transcript → existing pipeline)

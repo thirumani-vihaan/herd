@@ -21,6 +21,19 @@ the tradeoff, the decision, and the consequences we accept.
 
 Start with [`adr/README.md`](adr/README.md) for the index.
 
+## Configuration
+
+HERD is not built for one campus. Everything institution-specific — notice
+sources, official channels, cohort dimensions, calendar and payment facts —
+lives in a YAML profile under
+[`config/institutions/`](../config/institutions/README.md), and nothing
+institution-specific appears in code, prompts, or enums.
+
+Strain memory is deliberately outside that scope: a pattern learned at one
+institution is recognised at every other one, while the verdict about it is
+always re-derived from local evidence. See
+[ADR-0026](adr/0026-institution-profiles.md).
+
 ## The one paragraph that explains the whole system
 
 Fact-checking answers *"is this true?"* — a question that arrives too late,
