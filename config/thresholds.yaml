@@ -81,12 +81,12 @@ aggregation:
   # itself calls "near-conclusive" could only move the posterior from 0.35 to
   # 0.55, and no combination of Tier-0 evidence could ever reach FALSE. This is
   # the conversion, and it is calibrated (T044b), not guessed.
-  log_odds_per_unit_strength: 3.0
+  log_odds_per_unit_strength: 2.75
 
   # Total raw rule weight at which a single agent is maximally confident.
   # Below it, strength scales linearly; it can never exceed 1.0, so no single
   # agent can saturate the posterior on its own.
-  agent_saturation: 1.4
+  agent_saturation: 1.2
 
   # Per-agent contradiction caps (docs/03). Support is uncapped where noted.
   # Note: Tier-0 support is NOT capped to stop it confirming claims — that is
