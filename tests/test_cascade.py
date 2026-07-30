@@ -8,6 +8,7 @@ a timid one is correct and costs ten times more per report.
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import datetime, timezone
 
 import pytest
@@ -40,10 +41,12 @@ class Fake(InvestigationAgent):
     def __init__(self, name: str, tier: int, signal: str = "neutral",
                  strength: float = 0.0, *, group: str = "independent",
                  applies: bool = True, raises: bool = False,
-                 delay: float = 0.0, status: str = "ok") -> None:
+                 delay: float = 0.0, block: float = 0.0,
+                 status: str = "ok") -> None:
         self.name, self.tier = name, tier
         self.signal, self.strength, self.group = signal, strength, group
         self._applies, self.raises, self.delay, self.status = applies, raises, delay, status
+        self.block = block
         self.ran = False
 
     def applies_to(self, c: Claim) -> bool:
@@ -53,6 +56,12 @@ class Fake(InvestigationAgent):
         self.ran = True
         if self.delay:
             await asyncio.sleep(self.delay)
+        if self.block:
+            # Synchronous work inside an async agent — the shape a real agent
+            # takes the day someone reaches for `requests` instead of httpx.
+            # asyncio.wait_for cannot cancel it, so the tier genuinely overruns
+            # rather than being cut off at exactly the budget.
+            time.sleep(self.block)
         if self.raises:
             raise RuntimeError("agent exploded")
         sources = [] if self.signal == "neutral" else [
@@ -228,10 +237,36 @@ def test_cascade_with_no_agents_returns_the_prior():
 
 
 def test_deadline_stops_further_tiers():
-    result = run(build([Fake("a", 0, delay=0.4), Fake("b", 1), Fake("c", 2)],
+    """A tier that overruns the budget must end the investigation.
+
+    The overrunning agent blocks *synchronously* on purpose. A cooperative
+    agent cannot be used to test this: its budget at tier 0 is the entire
+    remaining deadline, so cancelling it lands the remainder on exactly zero,
+    and whether the next tier is entered then turns on sub-millisecond timer
+    jitter. That is a coin flip, not a property — and it flipped, roughly once
+    in thirteen full-suite runs, once torch had nudged the platform timer.
+
+    A blocking agent overruns by a margin far larger than any jitter, so the
+    assertion below is about the cascade's behaviour rather than the clock's.
+    """
+    tier1, tier2 = Fake("b", 1), Fake("c", 2)
+    result = run(build([Fake("a", 0, block=0.4), tier1, tier2],
                        deadline_ms=200))
+
     assert result.deadline_exceeded
-    assert result.highest_tier_reached < 2
+    assert result.highest_tier_reached == 0
+    assert not tier1.ran and not tier2.ran
+
+
+def test_a_tier_that_finishes_inside_the_budget_does_not_end_the_run():
+    """The other side of the same rule, so the test above cannot be satisfied
+    by a cascade that simply gives up after tier 0."""
+    tier1, tier2 = Fake("b", 1), Fake("c", 2)
+    result = run(build([Fake("a", 0), tier1, tier2], deadline_ms=5000))
+
+    assert not result.deadline_exceeded
+    assert result.highest_tier_reached == 2
+    assert tier1.ran and tier2.ran
 
 
 # --------------------------------------------------------------------------

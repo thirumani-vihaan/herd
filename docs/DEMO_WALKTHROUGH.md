@@ -4,7 +4,7 @@ Everything you need to explain, defend and demonstrate HERD. Read this the
 night before. The **§9 Q&A** section is the part that wins or loses the room.
 
 > **Status honesty:** as of this document the investigation core is built and
-> tested (168 tests). The UI, the API and Tier 2/3 agents are not built yet.
+> tested (169 tests). The UI, the API and Tier 2/3 agents are not built yet.
 > See `HANDOFF.md` §6. Do not rehearse a demo of something that does not exist —
 > rehearse the demo of what *will* exist, and check it against `HANDOFF.md` §7
 > the morning of.
@@ -219,7 +219,7 @@ on a 35-claim labelled corpus, **with the network blocked**:
 | Confirmed TRUE without a citable source | **0** |
 | Worst-case margin to an error | **0.214** posterior units |
 | Offline latency | sub-millisecond per claim |
-| Tests | **168 passing** |
+| Tests | **169 passing** |
 | ADRs | **28** |
 
 **Say the caveat out loud before a judge finds it:** exact label match at

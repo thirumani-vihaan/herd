@@ -116,27 +116,97 @@ suspicious messages to a friend asking *"is this real?"*
 
 Full design documentation lives in [`docs/`](docs/) — architecture, data model,
 investigation cascade, spread model, intervention, trust & safety, evaluation,
-API, and non-goals — plus [27 architecture decision records](docs/adr/) covering
+API, and non-goals — plus [29 architecture decision records](docs/adr/) covering
 every significant fork with the options considered and the consequences accepted.
+
+Three of those ADRs were written *during* the build, not before it, because
+measurement contradicted the design:
+
+- **[ADR-0027](docs/adr/0027-strength-is-a-confidence.md)** — evidence strength
+  is a 0..1 confidence, not a log-odds delta. Before this, every unit test
+  passed while the product returned UNVERIFIED for literally everything: the
+  verdict bands described a region the system could not physically enter.
+- **[ADR-0028](docs/adr/0028-true-requires-confirmation.md)** — TRUE requires a
+  *confirming source*. Absence of fraud indicators is not evidence of
+  authenticity; it is equally consistent with a well-made scam.
+- **[ADR-0026](docs/adr/0026-institution-profiles.md)** — strain memory is
+  global, institutional evidence is scoped. One campus's mistake must never
+  become every campus's verdict.
+
+---
+
+## Current state
+
+**~30% complete.** The brain is built and measured; the body is not.
+
+| | |
+|---|---|
+| Tests | **169 passing** |
+| Agents | **6 of 9** built (all of Tier 0 and Tier 1) |
+| Scams detected | **13 / 13** |
+| Genuine notices falsely accused | **0 / 14** |
+| Confirmed TRUE without a source | **0** |
+| Verdict latency (cache-hit path) | **3 ms** |
+| UI | not started |
+
+What works today: redaction → claim extraction → strain recognition → a
+four-tier investigation cascade with asymmetric early exit → deterministic
+log-odds aggregation → a cited verdict. Measured offline over a 35-claim
+labelled corpus, with the network blocked.
+
+What does not exist yet: the two agents that can *confirm* a notice as genuine,
+the spread model, the API, and the dashboard. Genuine notices therefore
+correctly land on **UNVERIFIED** rather than TRUE — the honest output of an
+incomplete system.
+
+Full status, the complete 71-task ledger, and every design decision with its
+reasoning: **[`HANDOFF.md`](HANDOFF.md)**.
+Demo preparation: **[`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md)**.
+
+---
 
 ## Stack
 
-Python · FastAPI · Gemini (multimodal OCR + extraction + prose) ·
+Python 3.11 · FastAPI · Gemini (multimodal OCR + extraction + prose) ·
 LangGraph (investigation cascade) · `paraphrase-multilingual-MiniLM-L12-v2`
 (code-mixed strain embedding) · Chroma (herd memory) · SciPy (tiered spread fit) ·
 SQLite/WAL behind storage interfaces · React + WebSocket dashboard
 
 ## Setup
 
-```bash
-cp .env.example .env     # add your keys, pick HERD_INSTITUTION
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+```powershell
+python -m venv venv
+venv\Scripts\python.exe -m pip install -r requirements.txt
+copy .env.example .env     # add your keys, pick HERD_INSTITUTION
 ```
 
-To run against a different campus, copy
-`config/institutions/_template.yaml`, fill it in, and set `HERD_INSTITUTION` to
-its id. No code changes.
+### Run it
+
+There is no server yet. The pipeline runs end to end through a driver script:
+
+```powershell
+venv\Scripts\python.exe tools\demo_run.py                  # investigate a scam
+venv\Scripts\python.exe tools\demo_run.py --offline        # network blocked
+venv\Scripts\python.exe tools\demo_run.py --text "..."     # your own claim
+```
+
+### Reproduce the numbers
+
+```powershell
+venv\Scripts\python.exe -m pytest tests\ -q                # 169 tests
+venv\Scripts\python.exe tools\eval_tier0.py --with-tier1   # confusion matrix
+venv\Scripts\python.exe tools\calibrate_aggregation.py     # re-derive constants
+```
+
+Every tunable lives in `config/thresholds.yaml`; **no numeric literal is allowed
+in `app/`**, and an AST test enforces it — so the constants above are genuinely
+derived rather than hand-tuned in place.
+
+### Port it to another campus
+
+Copy `config/institutions/_template.yaml`, fill it in, set `HERD_INSTITUTION` to
+its id. **No code changes** — `tools/lint_institution.py` enforces that no
+institutional string ever appears in `app/` or `web/`.
 
 ---
 
