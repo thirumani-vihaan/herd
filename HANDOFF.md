@@ -4,17 +4,20 @@ Complete state of HERD as of commit `ac886e8` on `main`. Written for whoever
 (human or agent) picks this up next, assuming **zero prior context**.
 
 This file is deliberately exhaustive. If you read only one thing, read
-[§2 Ground rules](#2-ground-rules--absolute) and [§5 Task ledger](#5-the-complete-task-ledger).
+[§2 Ground rules](#2-ground-rules-that-are-absolute) and [§5 Task ledger](#5-the-complete-task-ledger).
 
 **Reading order for a cold start:** §1 → §2 → §3 → §5 → §9 → then `SPEC_DIGEST.md`
 for the invariants and `docs/DEMO_WALKTHROUGH.md` for what gets shown on stage.
+
+Headings deliberately avoid punctuation so their anchors resolve identically in
+every markdown renderer.
 
 ---
 
 ## Table of contents
 
 1. [What HERD is](#1-what-herd-is)
-2. [Ground rules — absolute](#2-ground-rules--absolute)
+2. [Ground rules that are absolute](#2-ground-rules-that-are-absolute)
 3. [Environment and exact incantations](#3-environment-and-exact-incantations)
 4. [Status dashboard](#4-status-dashboard)
 5. [The complete task ledger](#5-the-complete-task-ledger)
@@ -22,7 +25,7 @@ for the invariants and `docs/DEMO_WALKTHROUGH.md` for what gets shown on stage.
 7. [The agent roster](#7-the-agent-roster)
 8. [Measured results](#8-measured-results)
 9. [Design decisions that must not be undone](#9-design-decisions-that-must-not-be-undone)
-10. [Bugs already found and fixed](#10-bugs-already-found-and-fixed--do-not-reintroduce)
+10. [Bugs already fixed and why they must not return](#10-bugs-already-fixed-and-why-they-must-not-return)
 11. [Contract facts and gotchas](#11-contract-facts-and-gotchas-that-cost-time)
 12. [Known gaps, ranked](#12-known-gaps-ranked)
 13. [Test inventory and coverage holes](#13-test-inventory-and-coverage-holes)
@@ -71,7 +74,7 @@ because it arrives carrying everyone else's accumulated immunity.
 
 ---
 
-## 2. Ground rules — absolute
+## 2. Ground rules that are absolute
 
 These are not style preferences. **Each one was earned by a bug or an explicit
 user instruction.** Breaking any of them silently degrades the product.
@@ -609,7 +612,7 @@ If you find yourself "simplifying" one of these, read the reason first.
 
 ---
 
-## 10. Bugs already found and fixed — do not reintroduce
+## 10. Bugs already fixed and why they must not return
 
 | # | Bug | How it was found | Fix |
 |---|---|---|---|
