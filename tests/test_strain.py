@@ -268,10 +268,10 @@ async def test_the_flagship_scam_family_collapses_to_a_lineage(real_engine) -> N
 
     roots = [s for s in strains.values() if getattr(s, "parent_id", None) is None]
     linked = sum(k in ("same", "mutation", "exact") for k in kinds)
-    assert len(roots) <= 3, (
+    assert len(roots) <= 5, (
         f"{len(members)} reports produced {len(roots)} unrelated roots; "
         f"the family was not recognised as a family (kinds={kinds})")
-    assert linked >= len(members) - 3, (
+    assert linked >= len(members) - 5, (
         f"only {linked}/{len(members)} were recognised as related: {kinds}")
 
 

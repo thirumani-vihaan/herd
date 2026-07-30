@@ -164,6 +164,12 @@ agents:
       personal_phone_only: 0.25
       official_email: 0.40
 
+  institutional_source:
+    similarity_threshold: 0.85
+  
+  official_channel:
+    similarity_threshold: 0.85
+
 spread:
   # ADR-0017 - the model is chosen by sample size, never by how it looks
   tiers:
