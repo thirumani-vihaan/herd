@@ -1,0 +1,39 @@
+# --- Secrets: never commit these (this is a PUBLIC repo) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# --- Python ---
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node ---
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# --- Logs & local data ---
+*.log
+logs/
+data/cache/
+data/chroma_db/
+data/hf_cache/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
