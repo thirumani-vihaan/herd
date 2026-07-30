@@ -38,6 +38,8 @@ produces a new record that supersedes the old one.
 | [0015](0015-institutional-snapshot.md) | Pre-crawled institutional snapshot + RAG | Accepted |
 | [0016](0016-rdap-over-whois.md) | RDAP over WHOIS | Accepted |
 | [0017a](0017a-langgraph-orchestration.md) | LangGraph for orchestration | Accepted |
+| [0027](0027-strength-is-a-confidence.md) | Evidence strength is a confidence, converted to log-odds by a calibrated scale | Accepted — fixes a bug in 0013 |
+| [0028](0028-true-requires-confirmation.md) | TRUE requires a confirming source; absence of fraud indicators is not evidence of authenticity | Accepted |
 
 ### Spread
 | # | Decision | Status |

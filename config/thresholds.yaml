@@ -36,6 +36,33 @@ verdict:
     lo: 0.15
     hi: 0.35
 
+  # ADR-0028 - TRUE is not reachable by arithmetic alone.
+  # Every other label can be earned by accumulating evidence. TRUE cannot,
+  # because the evidence that would earn it is an ABSENCE: no fraud rule fired.
+  # Absence of fraud indicators is not evidence of authenticity — it is equally
+  # consistent with a well-made scam, or with a credential phish that never
+  # mentions money. Confirming a notice is genuine requires an agent that
+  # actually found it on a source that is entitled to publish it.
+  #
+  # Enforcing this with a support cap was tried first and rejected: the cap
+  # only binds at particular values of log_odds_per_unit_strength, so a later
+  # recalibration would silently re-enable unfounded confirmations.
+  true_requires_confirmation: true
+  confirming_agents:
+    - InstitutionalSource
+    - OfficialChannel
+
+  # ADR-0026 - evidence that can shorten an investigation but never BE one.
+  # Seeing this exact template at another college is a strong hint and a
+  # terrible verdict: it means one institution's mistake would propagate as
+  # every institution's answer, and a poisoned strain at one campus could
+  # convict a genuine notice at another. If the only usable evidence comes from
+  # these agents, the answer is UNVERIFIED no matter how confident the
+  # arithmetic looks. Enforced structurally rather than by shrinking their cap,
+  # because a cap only holds at one particular log_odds_per_unit_strength.
+  cannot_conclude_alone:
+    - StrainPrior
+
 aggregation:
   # ADR-0013 - within a correlation group only the strongest signal counts at
   # full weight; the rest are discounted by this factor. Without it the
@@ -44,7 +71,22 @@ aggregation:
   prior_false: 0.35              # base rate of falsity among reported claims
   max_abs_log_odds: 6.0          # hard clamp; keeps confidence away from 1.0
 
+  # Evidence.strength is a unitless 0..1 confidence, NOT a log-odds delta.
+  # Treating it as one silently caps the whole system: a rule the rule set
+  # itself calls "near-conclusive" could only move the posterior from 0.35 to
+  # 0.55, and no combination of Tier-0 evidence could ever reach FALSE. This is
+  # the conversion, and it is calibrated (T044b), not guessed.
+  log_odds_per_unit_strength: 3.0
+
+  # Total raw rule weight at which a single agent is maximally confident.
+  # Below it, strength scales linearly; it can never exceed 1.0, so no single
+  # agent can saturate the posterior on its own.
+  agent_saturation: 1.4
+
   # Per-agent contradiction caps (docs/03). Support is uncapped where noted.
+  # Note: Tier-0 support is NOT capped to stop it confirming claims — that is
+  # handled structurally by verdict.true_requires_confirmation, which cannot be
+  # undone by recalibrating a scale factor.
   caps:
     InstitutionalSource:
       contradicts: 0.30          # colleges announce late; absence is weak
