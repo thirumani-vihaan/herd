@@ -71,13 +71,32 @@ TRANSLIT = {
 
 
 def _entities(text: str) -> Entities:
+    emails = [m.group(0) for m in EMAIL_RE.finditer(text)]
+    upis = [m.group(1) for m in UPI_RE.finditer(text)]
+
+    # Excise addresses and payment handles before scanning for links. Without
+    # this, the local part of `tcs.hr.official@gmail.com` matches the URL
+    # pattern and `tcs.hr.official` is recorded as a domain — a host that does
+    # not exist, sent to RDAP on the demo's critical path, and worse, used as
+    # an ADR-0008 hard gate that would split one strain into several.
+    scannable = text
+    for token in sorted(set(emails + upis), key=len, reverse=True):
+        scannable = scannable.replace(token, " ")
+
     urls, domains = [], []
-    for m in URL_RE.finditer(text):
+    for m in URL_RE.finditer(scannable):
         raw = m.group(0).rstrip(".,)")
         if "@" in raw:
             continue
         urls.append(raw)
         host = re.sub(r"^https?://", "", raw).split("/")[0].lower()
+        if "." in host:
+            domains.append(host)
+
+    # A mail domain is a domain, but it is not a link anyone clicked, so it
+    # belongs in `domains` and not in `urls`.
+    for address in emails:
+        host = address.rsplit("@", 1)[-1].lower().rstrip(".,)")
         if "." in host:
             domains.append(host)
 
@@ -148,10 +167,9 @@ def _entities(text: str) -> Entities:
         domains=list(dict.fromkeys(domains))[:6],
         dates=list(dict.fromkeys(m.group(0).lower() for m in DATE_RE.finditer(text)))[:6],
         contacts=list(dict.fromkeys(
-            [m.group(0) for m in EMAIL_RE.finditer(text)]
-            + [m.group(0).strip() for m in PHONE_RE.finditer(text)]
+            emails + [m.group(0).strip() for m in PHONE_RE.finditer(text)]
         ))[:6],
-        upi_handles=list(dict.fromkeys(m.group(1) for m in UPI_RE.finditer(text)))[:4],
+        upi_handles=list(dict.fromkeys(upis))[:4],
     )
 
 

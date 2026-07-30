@@ -122,6 +122,48 @@ aggregation:
     OpenWebResearch: 0.70
     StrainPrior: 0.85
 
+agents:
+  # Per-agent tunables. Strengths are 0..1 confidences (ADR-0027); the
+  # aggregator converts them via aggregation.log_odds_per_unit_strength.
+  domain_forensics:
+    timeout_s: 4.0
+    # Two labels this close apart are not a coincidence at this length.
+    # Higher and 'iare.ac.in' vs 'cbit.ac.in' start matching each other.
+    lookalike_max_edit_distance: 2
+    lookalike_min_label_chars: 5
+    # An institution token shorter than this ('iit', 'nit') appears inside too
+    # many innocent words to accuse anyone with.
+    impersonation_min_token_chars: 5
+    new_domain_days: 90
+    very_new_domain_days: 30
+    strength:
+      impersonating_official: 0.90
+      lookalike: 0.85
+      very_new_domain: 0.70
+      new_domain: 0.35
+      suspicious_tld: 0.30
+      official_domain: 0.35
+
+  url_safety:
+    timeout_s: 4.0
+    # A blocklist hit is as close to proof as an automated check gets.
+    strength:
+      threat_match: 0.95
+    # There is deliberately no 'clean' strength. Safe Browsing lists a domain
+    # days after it is reported, and campus scam domains are usually hours old,
+    # so "not on the list" is overwhelmingly the answer for real scams too.
+    # Reading that as evidence of safety is ADR-0028's mistake in miniature.
+
+  contact_forensics:
+    timeout_s: 2.0
+    strength:
+      unofficial_upi: 0.80
+      lookalike_email_domain: 0.85
+      impersonating_email_domain: 0.90
+      freemail_contact: 0.45
+      personal_phone_only: 0.25
+      official_email: 0.40
+
 spread:
   # ADR-0017 - the model is chosen by sample size, never by how it looks
   tiers:

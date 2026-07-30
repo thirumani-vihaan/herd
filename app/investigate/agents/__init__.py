@@ -6,5 +6,7 @@ why the median claim never reaches Tier 2 at all.
 """
 from app.investigate.agents.memory import StrainPrior
 from app.investigate.agents.tier0 import FraudHeuristics, TemplateProvenance, load_rules
+from app.investigate.agents.tier1 import ContactForensics, DomainForensics, URLSafety
 
-__all__ = ["FraudHeuristics", "StrainPrior", "TemplateProvenance", "load_rules"]
+__all__ = ["ContactForensics", "DomainForensics", "FraudHeuristics", "StrainPrior",
+           "TemplateProvenance", "URLSafety", "load_rules"]
