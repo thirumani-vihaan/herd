@@ -313,10 +313,10 @@ def build_specs() -> list[dict]:
             text=f"{body}\n\n- {inst[0]}\n{inst[1]}")
 
     # ---------- OUT OF SCOPE: refusal must be exercised (ADR-0024) ----------
-    add(id="oos_politics_0", inst=INSTITUTIONS[1], truth="OUT_OF_SCOPE", claim_type="other",
+    add(id="oos_politics_0", inst=INSTITUTIONS[1], truth="OUT_OF_SCOPE", claim_type="out_of_scope",
         strain_group="oos_politics", text=("Share this before it gets deleted!!\n"
         "The new policy will change everything for our state. Forward to 10 groups."))
-    add(id="oos_health_0", inst=INSTITUTIONS[3], truth="OUT_OF_SCOPE", claim_type="other",
+    add(id="oos_health_0", inst=INSTITUTIONS[3], truth="OUT_OF_SCOPE", claim_type="out_of_scope",
         strain_group="oos_health", text=("Drinking warm water with lemon every morning "
         "cures 90% of diseases. Doctors won't tell you this. Forward to all."))
 
@@ -339,7 +339,7 @@ def build_specs() -> list[dict]:
     add(id="edge_cropped_header", inst=INSTITUTIONS[5], truth="TRUE", claim_type="event",
         strain_group="edge", crop_header=True,
         text="Sports day on Saturday. Register at the physical education office.")
-    add(id="edge_meme", inst=INSTITUTIONS[0], truth="OUT_OF_SCOPE", claim_type="other",
+    add(id="edge_meme", inst=INSTITUTIONS[0], truth="OUT_OF_SCOPE", claim_type="out_of_scope",
         strain_group="edge", forwarded=False,
         text="when the prof says 'this will not be in the exam' \\_(*_*)_/")
 
