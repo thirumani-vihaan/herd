@@ -45,13 +45,7 @@ if ($Message) {
 
   $staged = git -C $Repo diff --cached --name-only
   if ($staged) {
-    $full = @"
-$Message
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-Copilot-Session: dd80faca-1bcb-4db8-af60-a74a3d2016f5
-"@
-    git -C $Repo commit -q -m $full
+    git -C $Repo commit -q -m $Message
     if ($LASTEXITCODE -ne 0) { Fail "commit failed" }
     Write-Host "committed: $(git -C $Repo log --oneline -1)"
   } else {

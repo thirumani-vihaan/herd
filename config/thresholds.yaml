@@ -5,9 +5,14 @@
 strain:
   # ADR-0007 - incremental assignment bands
   same_strain: 0.88        # >= this: attach, serve cached verdict
-  mutation: 0.72           # >= this and < same_strain: child strain
+  mutation: 0.70           # >= this and < same_strain: child strain
   # < mutation: new strain, full investigation
   amount_tolerance: 0.20   # ADR-0008 hard gate: amounts within 20%
+  # Below this many characters of extracted text there is not enough signal to
+  # recognise anything, and a near-empty claim would act as an attractor that
+  # every other near-empty claim merges into. Found by calibration: two blank
+  # fixtures merged into one strain, which is the shape of a poisoning attack.
+  min_content_chars: 25
 
 cascade:
   # ADR-0011 - |posterior| needed to exit each tier

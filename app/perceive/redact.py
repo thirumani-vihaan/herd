@@ -31,6 +31,23 @@ def reporter_hash(raw_identifier: str, salt: str, period_days: int = 30,
     return hmac.new(salt.encode(), msg, hashlib.sha256).hexdigest()[:32]
 
 
+def _tag(value: str, prefix: str) -> str:
+    """A stable, non-reversible stand-in that still tells two values apart.
+
+    This distinction is load-bearing and was found by a failing test rather
+    than by reading the code. A mask that collapses every UPI handle to one
+    literal is privacy-preserving but destroys the ADR-0008 payment-rail hard
+    gate: two scams collecting at different accounts would look identical and
+    merge into one strain, and the warning would then name the wrong account.
+
+    A short digest keeps the property we actually need — same handle maps to
+    the same tag, different handles map to different tags — while the handle
+    itself is unrecoverable from the tag.
+    """
+    digest = hashlib.blake2b(value.lower().encode(), digest_size=3).hexdigest()
+    return f"{prefix}{digest}"
+
+
 def redact_text(text: str) -> tuple[str, list[str]]:
     """Mask third-party contact details, keeping enough shape for the rules.
 
@@ -42,16 +59,18 @@ def redact_text(text: str) -> tuple[str, list[str]]:
 
     def upi_sub(m: re.Match) -> str:
         found.append("upi")
-        return f"UPIMASK@{m.group(0).split('@')[1]}"
+        local, _, provider = m.group(0).partition("@")
+        return f"{_tag(local, 'UPI')}@{provider}"
 
     def phone_sub(m: re.Match) -> str:
         found.append("phone")
         digits = re.sub(r"\D", "", m.group(0))
-        return f"PHONEMASK{digits[-2:]}" if len(digits) >= 2 else "PHONEMASK"
+        return _tag(digits, "PHONE")
 
     def email_sub(m: re.Match) -> str:
         found.append("email")
-        return f"EMAILMASK@{m.group(0).split('@')[1]}"
+        local, _, domain = m.group(0).partition("@")
+        return f"{_tag(local, 'EMAIL')}@{domain}"
 
     out = UPI.sub(upi_sub, text)
     out = EMAIL.sub(email_sub, out)
