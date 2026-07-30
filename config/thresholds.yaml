@@ -20,10 +20,15 @@ cascade:
     tier0: 0.90
     tier1: 0.85
     tier2: 0.80
+    # tier 3 is terminal: there is nothing left to buy, so there is no bar
   # Asymmetry: exiting toward FALSE is more expensive than toward UNVERIFIED,
   # because a false accusation costs far more than a slow answer (ADR-0014).
   false_exit_multiplier: 1.0     # applied to the exit bar when heading to FALSE
   unverified_exit_multiplier: 0.85
+  # A deadline, not a per-agent timeout: each tier gets the time that is left,
+  # so a slow Tier 1 cannot silently spend Tier 2's budget and leave the user
+  # watching a spinner.
+  deadline_ms: 20000
 
 verdict:
   # ADR-0014 - calibrated bands on P(false). UNVERIFIED is widest on purpose.
@@ -97,6 +102,14 @@ aggregation:
     StrainPrior:
       contradicts: 0.45          # ADR-0026: can shorten, can never conclude
       supports: 0.45
+
+  # ADR-0026. History HERE is stronger than history ELSEWHERE, because here we
+  # know how the conclusion was reached; elsewhere we deliberately read only
+  # the label on the sighting and never the other institution's evidence.
+  # Both are bounded by caps.StrainPrior and neither can conclude alone.
+  strain_prior:
+    same_institution: 0.75
+    cross_institution: 0.35
 
   reliability:                   # learned from ground truth; updated by T104
     FraudHeuristics: 1.00

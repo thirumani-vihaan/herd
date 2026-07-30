@@ -4,6 +4,7 @@ Tier 0 is free and offline. Tier 1 costs a network call. Tier 2 costs money.
 The cascade stops at the cheapest tier that can settle the question, which is
 why the median claim never reaches Tier 2 at all.
 """
+from app.investigate.agents.memory import StrainPrior
 from app.investigate.agents.tier0 import FraudHeuristics, TemplateProvenance, load_rules
 
-__all__ = ["FraudHeuristics", "TemplateProvenance", "load_rules"]
+__all__ = ["FraudHeuristics", "StrainPrior", "TemplateProvenance", "load_rules"]
