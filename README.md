@@ -98,6 +98,13 @@ suspicious messages to a friend asking *"is this real?"*
 
 ---
 
+## Design
+
+Full design documentation lives in [`docs/`](docs/) — architecture, data model,
+investigation cascade, spread model, intervention, trust & safety, evaluation,
+API, and non-goals — plus [26 architecture decision records](docs/adr/) covering
+every significant fork with the options considered and the consequences accepted.
+
 ## Stack
 
 Python · FastAPI · Gemini (multimodal OCR + extraction + synthesis) ·
