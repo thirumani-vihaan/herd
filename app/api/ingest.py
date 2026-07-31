@@ -157,6 +157,7 @@ def _serialise(result: Any, claim: Any, strain: Any, velocity: str,
             "id": strain.id,
             "report_count": report_count,
             "velocity": velocity,
+            "mutation_index": min(0.99, (report_count - 1) * 0.12) if report_count > 1 else 0.0,
             "first_seen": strain.first_seen.isoformat() if strain.first_seen else None,
         },
         "trace": [

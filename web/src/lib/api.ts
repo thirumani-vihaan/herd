@@ -62,6 +62,7 @@ export interface Investigation {
     id: string;
     report_count: number;
     velocity: "low" | "medium" | "high" | string;
+    mutation_index?: number;
     first_seen: string | null;
   };
   trace: TierTrace[];

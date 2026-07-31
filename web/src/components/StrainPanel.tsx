@@ -72,6 +72,30 @@ export default function StrainPanel({ data }: { data: Investigation }) {
         </div>
       </div>
 
+      {s.mutation_index !== undefined && s.report_count > 1 && (
+        <div className="mt-5 flex items-center gap-4 border-t border-rulesoft pt-4">
+          <div className="flex items-center gap-0.5" aria-hidden>
+            {[...Array(12)].map((_, i) => {
+              const isActive = (i / 12) < s.mutation_index!;
+              return (
+                <span
+                  key={i}
+                  className={`h-4 w-1.5 transition-colors ${isActive ? 'bg-true' : 'bg-rule'}`}
+                />
+              );
+            })}
+          </div>
+          <div>
+            <p className="text-[14px] font-medium leading-none text-ink">
+              Mutation Index: {Math.round(s.mutation_index * 100)}%
+            </p>
+            <p className="mt-1 text-[12.5px] leading-snug text-faint">
+              Scammers have altered this wording to evade static filters. The Strain Engine successfully clustered them.
+            </p>
+          </div>
+        </div>
+      )}
+
       <p className="mt-5 border-t border-rulesoft pt-4 text-[12px] leading-relaxed text-faint">
         Counted from real reports that were stored, never from an assumption
         about how far something has travelled.
