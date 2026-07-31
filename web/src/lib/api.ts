@@ -106,6 +106,10 @@ export interface AppContext {
     official_domain: string;
   };
   agent_count: number;
+  global_stats?: {
+    total_intercepts: number;
+    estimated_fraud_blocked: number;
+  };
   samples: Sample[];
 }
 

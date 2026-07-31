@@ -332,6 +332,9 @@ async def context():
     lookalike = f"{inst.id}-placements.online"
     currency = inst.locale.currency
 
+    strains = await container.store.all_strains()
+    total_intercepts = sum(s.report_count for s in strains)
+
     return {
         "institution": {
             "id": inst.id,
@@ -342,6 +345,10 @@ async def context():
         "agent_count": sum(
             len(v) for v in container.build_cascade(ForwardMarkers()).tiers.values()
         ),
+        "global_stats": {
+            "total_intercepts": total_intercepts,
+            "estimated_fraud_blocked": total_intercepts * 500
+        },
         "samples": [
             {
                 "label": "Fee scam",
