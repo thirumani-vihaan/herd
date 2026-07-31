@@ -16,10 +16,11 @@ from typing import Annotated, Any
 from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from app.contracts import ForwardMarkers, Strain
+from app.contracts import ForwardMarkers, Report, Strain
 from app.institution import get_institution
 from app.perceive.extract import extract_claim
 from app.perceive.redact import redact_text
+from app.spread.velocity import calculate_velocity
 from app.wiring import build_container, Container
 from app.config import get_thresholds
 
@@ -37,6 +38,13 @@ async def lifespan(app: FastAPI):
     inst = get_institution()
     container = build_container(inst.id)
     await container.store.init()
+    # Warm the embedding model at startup. Loading it lazily on the first
+    # request cost ~40s, which is the first thing a demo audience would see.
+    try:
+        await asyncio.to_thread(container.embeddings.encode, ["warmup"])
+        logger.info("embedding model warmed")
+    except Exception as exc:
+        logger.warning("embedding warm-up skipped: %s", exc)
     yield
     if hasattr(container.fetcher, "aclose"):
         await container.fetcher.aclose()
@@ -92,53 +100,78 @@ class IngestResponse(BaseModel):
 
 
 async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | None, 
-                           reporter_hash: str, is_forwarded: bool, is_frequent: bool):
+                           reporter_hash: str, is_forwarded: bool, is_frequent: bool,
+                           image_sha256: str = ""):
     """Run the actual investigation pipeline."""
     if not container:
         return
 
     inst = container.institution
     redacted, _ = redact_text(text)
+    markers = ForwardMarkers(is_forwarded=is_forwarded,
+                             is_frequently_forwarded=is_frequent)
+
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+
+    # Persist the report first, so the strain memory and the velocity signal are
+    # both computed from data that actually exists (never fabricated).
+    report = Report(
+        id=f"rep_{tracking_id}", institution_id=inst.id, received_at=now,
+        channel="web", raw_text=redacted, image_sha256=image_sha256 or None,
+        reporter_hash=reporter_hash or "anonymous", forward_markers=markers,
+    )
+    await container.store.save_report(report)
+
     claim = await extract_claim(
         llm=container.llm,
         text=redacted,
         image_bytes=image_bytes,
-        report_id=f"rep_{tracking_id}",
+        report_id=report.id,
         institution_id=inst.id,
         institution_short_name=inst.short_name,
         claim_id=f"clm_{tracking_id[:12]}"
     )
-    
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
-    strain = Strain(id=f"str_{tracking_id[:12]}", first_seen=now, last_seen=now,
-                    report_count=1, entities=claim.entities)
-    
-    cascade = container.build_cascade(ForwardMarkers(
-        is_forwarded=is_forwarded, is_frequently_forwarded=is_frequent))
-    
+    await container.store.save_claim(claim)
+
+    # Real strain assignment (ADR-0007) rather than a fresh single-report strain,
+    # so StrainPrior sees genuine history and repeat reports accumulate.
+    # assign() only recognises; commit() folds the report into the centroid and
+    # re-indexes it, which is what makes the *next* report match this one.
+    assignment = await container.strain_engine.assign(
+        claim, image_sha256=image_sha256 or None)
+    native, en = container.strain_engine.embed_pair(claim)
+    strain = container.strain_engine.commit(assignment.strain, claim, native, en)
+    await container.store.upsert_strain(strain)
+    await container.store.link_report_to_strain(report.id, strain.id)
+
+    cascade = container.build_cascade(markers)
     result = await cascade.run(claim, strain)
-    
+
+    summary = ""
     if container.llm.available():
         prose = await container.llm.write_prose(
             label=result.aggregation.label.value,
             evidence=result.evidence,
             claim=claim
         )
-        summary = prose.get("summary") or "Investigation complete."
-    else:
-        summary = "Investigation complete."
-    
-    # Calculate simple velocity for UI demo
-    from app.spread.velocity import calculate_velocity
-    # Generate mock recent timestamps for the demo
-    recent_reports = [now] * (3 if is_frequent else 1)
-    velocity = calculate_velocity(recent_reports, now)
+        summary = (prose.get("summary") or "").strip()
+    if not summary:
+        summary = _fallback_summary(result)
+
+    # Velocity from the real report timestamps for this strain (ADR-0017: never
+    # project from data we do not have).
+    reports = await container.store.reports_for_strain(strain.id, inst.id)
+    timestamps = [r.received_at for r in reports if r.received_at] or [now]
+    velocity = calculate_velocity(timestamps, now)
 
     payload: dict[str, Any] = {
+        "tracking_id": tracking_id,
         "verdict": result.aggregation.label.value,
         "summary": summary,
-        "velocity": velocity
+        "velocity": velocity,
+        "strain_id": strain.id,
+        "report_count": len(timestamps),
     }
 
     if result.aggregation.label.value in ("FALSE", "MISLEADING"):
@@ -156,6 +189,22 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     await manager.broadcast(payload)
             
     return payload
+
+
+def _fallback_summary(result: Any) -> str:
+    """Say what the evidence actually was when no prose model is available.
+
+    The previous static string ("Investigation complete.") told the reader
+    nothing and hid the fact that prose generation had failed.
+    """
+    spoke = [e for e in result.evidence
+             if e.status == "ok" and e.signal != "neutral"]
+    if not spoke:
+        return ("No agent found anything decisive, so no claim is being made "
+                "about this message.")
+    top = sorted(spoke, key=lambda e: e.strength, reverse=True)[:2]
+    reasons = "; ".join(e.finding for e in top)
+    return f"{result.aggregation.label.value}: {reasons}"
 
 
 @app.post("/ingest", response_model=IngestResponse)
@@ -192,13 +241,24 @@ async def ingest_report(
             status="duplicate_received",
         )
 
+    # Contract path (Store.recent_duplicate): must run BEFORE the spread model
+    # sees the report, so a re-send never inflates the velocity signal.
+    if container is not None:
+        try:
+            prior = await container.store.recent_duplicate(
+                image_sha256 or None, reporter_hash or "anonymous", int(cache_ttl))
+            if prior:
+                return IngestResponse(tracking_id=prior, status="duplicate_received")
+        except Exception as exc:
+            logger.warning("store idempotency check unavailable: %s", exc)
+
     tracking_id = uuid.uuid4().hex
     _cache[idemp_key] = (tracking_id, now)
 
     background_tasks.add_task(
         process_pipeline,
         tracking_id, text, image_bytes, reporter_hash,
-        is_forwarded, is_frequently_forwarded
+        is_forwarded, is_frequently_forwarded, image_sha256
     )
 
     return IngestResponse(

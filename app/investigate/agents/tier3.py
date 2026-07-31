@@ -61,7 +61,8 @@ class OpenWebResearch(InvestigationAgent):
             "Do not state a final true/false verdict, just summarize the evidence direction."
         )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{self.model}:generateContent?key={self.api_key}")
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "tools": [{"googleSearch": {}}],
@@ -72,7 +73,6 @@ class OpenWebResearch(InvestigationAgent):
 
         resp = await self.fetcher.post_json(
             url,
-            params={"key": self.api_key},
             json=payload,
             timeout=self.timeout
         )
@@ -105,11 +105,19 @@ class OpenWebResearch(InvestigationAgent):
                         title=web.get("title", f"Web Source {i+1}"),
                         excerpt="",
                         retrieved_at=datetime.now(timezone.utc),
-                        kind="news"
+                        kind="web"
                     ))
                     
         except (KeyError, IndexError, json.JSONDecodeError) as exc:
             raise RuntimeError(f"unexpected gemini response format: {exc}") from exc
+
+        # Cite-or-stay-silent: grounding can come back empty even when the model
+        # asserts a direction. An uncited direction is exactly the thing this
+        # project refuses to emit, so it degrades to neutral rather than being
+        # rejected by the contract and swallowed as "unavailable".
+        if signal != "neutral" and not sources:
+            signal = "neutral"
+            finding = f"web research returned no citable sources; not asserting a direction ({finding})"[:500]
 
         # If it's neutral, strength is 0
         actual_strength = self.strength if signal != "neutral" else 0.0

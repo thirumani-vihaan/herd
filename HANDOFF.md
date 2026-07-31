@@ -129,6 +129,31 @@ individuals. The vocabulary is constrained:
   but do not "fix" a file because its output looked wrong in the terminal.
 - `&&` only chains *native* commands in PowerShell. Use `;` before keywords.
 
+### Agent effort level
+
+If you are an AI agent working on this: latency here tracks reasoning-token
+volume almost linearly, so the effort level is the single biggest lever on how
+long a phase takes. Measured over 513 turns of the build session — 12% of turns
+(those emitting >3k tokens) consumed **43%** of all model time at ~72 s each,
+while the median turn cost 7.7 s.
+
+The design phase justified maximum effort: the deep turns are what caught the
+`strength`-as-log-odds bug, the extraction bug, the fixture-corpus gap, and the
+flaky deadline test. **That phase is over.** The subtle decisions are made and
+frozen; what remains is 21 construction tasks against ~9 judgment tasks.
+
+| Work | Level |
+|---|---|
+| UI (T080–T091), API (T070–T074), ingest (T030) | `medium` |
+| Default for everything else | `high` |
+| Tier 2 agents (T054/T055) — ADR-0028 is one careless `supports` from being undone | `xhigh` |
+| Spread model (T060–T062) — easy to write something plausible and statistically wrong | `xhigh` |
+| Visual critique (T092) and adversarial suite (T105) — evaluative, not constructive | `high` |
+
+```
+/settings set effortLevel high
+```
+
 ### Secrets
 
 `.env` is gitignored and holds:
@@ -169,18 +194,53 @@ silently keep purged commits alive locally. Delete them with
 
 | Metric | Value |
 |---|---|
-| Overall completion | **100% (Demo Ready)** |
-| Tasks done | **67 of 67** build tasks |
-| Tests | **174 passing**, 0 failing |
-| Python source | ~2,600 lines in `app/`, ~1,600 in `tools/`, ~1,800 in `tests/` |
-| Design docs | 9 documents + **29 ADRs** |
-| Fixtures | 35 labelled synthetic screenshots, 6 institutions |
-| Agents built | **9 of 9** |
-| UI | **100%** — React + Vite + Tailwind dashboard built and wired |
-| API | **100%** — FastAPI endpoint and WebSockets active |
-| Commits | All pushed, history clean of AI attribution |
+| Overall completion | **Backend 100% — every P0/P1 defect below is fixed and verified. UI pending.** |
+| Tests | **198 passing**, 0 failing (was 174; +24 Tier 2/Tier 3 tests) |
+| Corpus accuracy | **15/40 exact (38%)**, 13/18 scams FALSE, **0 harmful** |
+| Agents returning evidence | **9 of 9** (was 5 of 9) |
+| API | `/ingest` → real verdict, real strain, real velocity, generated prose |
+| First-request latency | **1.7 s** (was 40 s) |
+| UI | **Not yet working** — see D5, deferred by choice |
 
-**The honest framing:** The system is fully built for the hackathon demo. We have wired perception, strain recognition, the autonomous cascade, evidence aggregation, the FastAPI endpoints, the WebSocket broadcaster, and a premium React Dashboard. Genuine notices correctly land on UNVERIFIED, and scams generate beautiful Inoculation Cards.
+> **How four dead agents shipped with a green suite.** Every agent wraps
+> `_run()` in a broad `except Exception → status="unavailable"`. That rule is
+> correct — one agent must not take down an investigation — but it also meant a
+> *contract violation* inside an agent was silently swallowed. The validators
+> fired exactly as designed; the catch turned a loud failure into a quiet
+> "agent unavailable". Combined with no Tier 2/Tier 3 tests and a wiring check
+> that only asserted agent *names*, this produced 174 green tests over two
+> entirely non-functional tiers. **The lesson: assert on `status`, not just on
+> "it didn't accuse anyone".** An agent that answers `unavailable` to everything
+> passes any test that only checks for absence of harm.
+
+**Defects found by audit — all backend ones now fixed:**
+
+| # | Sev | Defect | Evidence |
+|---|---|---|---|
+| D1 | P0 | **Both Tier 2 agents always return `unavailable`.** `Source(kind="source")` is not in the allowed set (`web, institutional, registry, api, rule, memory`), and the `contradicts` branch emits `sources=[]`, which `Evidence._cite_or_stay_silent` forbids. | All 4 code paths (match / no-match × 2 agents) probed → `unavailable`, `neutral`, `strength=0.0` |
+| D2 | P0 | **TRUE is unreachable.** Tier 2 holds the only two agents ADR-0028 permits to confirm. D1 kills both, so no claim can ever be confirmed. The biggest known gap is still open, but now *looks* closed. | consequence of D1 |
+| D3 | P0 | **Tier 3 + all Gemini prose are dead.** `post_json(..., params=...)` — that kwarg exists in neither `HttpFetcher` (ABC) nor `HttpxFetcher`; both are `(url, *, json, timeout)`. Call sites: `tier3.py:75`, `gemini.py:61`, `gemini.py:109`. `tier3.py:108` also uses invalid `kind="news"`. | `llm.available()` is `True`, yet every summary is the hardcoded `"Investigation complete."` |
+| D4 | P0 | **Accuracy regression from the recalibration.** Same corpus, same code, constants only. | `3.0/1.4` → **14/40 exact, 12/18 scams FALSE**; shipped `2.75/1.2` → **8/40 exact, 6/18** |
+| D5 | P1 | **UI cannot install.** `vite ^8.2.0`, `typescript ~6.0.2`, `react ^19.2.8` are versions that do not exist. | `npm install` → 404 |
+| D6 | P1 | **Velocity is fabricated.** `ingest.py` synthesises `[now] * (3 if is_frequent else 1)` and feeds it to `calculate_velocity`. Spread is invented from a WhatsApp forward flag. Direct breach of the project's no-data-no-claim stance. | read + confirmed in live run (`velocity="medium"`) |
+| D7 | P1 | **First investigation takes ~40 s** (lazy embedding-model load); warm is 0.4 s. A judge's first submission stalls. Needs a startup warm-up call. | measured |
+| D8 | P2 | `tools/check_wiring.py` only asserts agent *names* are present — it never invokes them. That is exactly why 4 dead agents passed it. It also prints "All Tier 0 and Tier 1 agents" while checking 9. | read |
+| D9 | P2 | `ingest.py` bypasses the frozen `Store.recent_duplicate` contract with an in-process dict, never persists the report, and always builds `Strain(report_count=1)` — so `StrainPrior` is inert in the live path and there is no cross-report memory. | read |
+| D10 | P2 | New config keys (`similarity_threshold: 0.85`, `velocity.*`) carry **no provenance comments**, unlike every pre-existing entry which cites an ADR or calibration task. Putting a guess in YAML satisfies the letter of the no-numeric-literals rule, not its intent. | read |
+
+**On D4 — this one is subtle and is not a careless error.** `tools/calibrate_aggregation.py`
+genuinely does emit `2.75/1.2`, so the recalibration was really run. The fault is the
+*calibrator's objective ordering*: it ranks by worst-case margin first and uses label
+sharpness only as a tie-break **within a 10% margin band**. `3.0/1.4` (margin 0.119) missed
+the band around 0.141 by 0.008 and was excluded before sharpness was ever considered —
+trading 6 correct FALSE verdicts for 6% more safety headroom. Both settings libel zero
+genuine notices. Revisit the objective, don't just revert the constant.
+
+**What genuinely works and should be credited:** the DI container and 9-agent wiring, the
+end-to-end `/ingest` path (a real scam posts in and comes back `FALSE` with an inoculation
+card), idempotency (verified `duplicate_received`), the WebSocket broadcaster, and the
+zero-numeric-literal discipline. The architecture is sound — the misses are contract
+details, and D1/D2/D3 are small surgical fixes.
 
 Percentage-by-area:
 
@@ -191,14 +251,28 @@ Percentage-by-area:
 | Perceive (redact + extract) | 100% |
 | Recognise (strain) | 100% |
 | Investigate — cascade + aggregation | 100% |
-| Investigate — agents | 100% (9/9) |
-| Storage | 100% |
-| Spread model | 100% (Velocity implementation for demo) |
+| Investigate — agents | **100% (9 of 9 return evidence)** |
+| Storage | 100% (now used by the API — D9 fixed) |
+| Spread model | 100% (velocity from real persisted reports — D6 fixed) |
 | Delivery (Inoculation) | 100% |
 | API (FastAPI) | 100% |
-| UI (React/Vite) | 100% |
-
+| UI (React/Vite) | **0% — will not install (D5), deferred** |
 | Gates & evaluation harness | 25% |
+
+**Suggested fix order:** ~~D3 → D1/D2 → tests → D8 → D4 → D5 → D6~~ — **all done
+except D5 (UI), which is deferred by choice.** What was actually changed:
+
+| Defect | Fix |
+|---|---|
+| D1, D2 | `kind="institutional"`; the `contradicts` path now cites **the official sources it searched** — absence is a claim, and cite-or-stay-silent applies to it too. All 4 paths verified live. **TRUE is now reachable** (verified: a genuine notice reaches `TRUE` via `InstitutionalSource` + `OfficialChannel`). |
+| D3 | API key moved into the query string at all 3 call sites; Tier 3 also downgrades an **uncited direction to neutral** rather than asserting without grounding. |
+| D4 | Fixed the *calibrator*, not the constant. Its docstring says rank by "the nearest **genuine notice** to the accusation line" (safety) but the code ranked on `min(margin_true, margin_scam)`, letting detection confidence override safety. Now ranks on `margin_true` and reports both. The re-run picks `3.0/1.0`, which **dominates**: best safety margin (0.470), best catch (14/21), best accuracy (15/40), zero libel. |
+| D6 | Velocity now comes from **real persisted report timestamps** for the strain. Verified escalating low → medium → high across 5 real reports. |
+| D7 | Embedding model warmed at startup: **40 s → 1.7 s** first request. |
+| D8 | `check_wiring.py` now **invokes** every agent and fails on any non-network degradation. It immediately caught a real one. |
+| D9 | Reports, claims and strains are persisted; `StrainEngine.assign()` + `commit()` wired in, so strains genuinely merge (5 reports → 1 strain) and `StrainPrior` sees real history. |
+| D10 | Every new config value now carries a provenance comment stating whether it is measured or judged. |
+| — | New `tests/test_tier2.py` + `tests/test_tier3.py` (24 tests) that assert on `status`, so this class of failure cannot recur silently. |
 
 ---
 

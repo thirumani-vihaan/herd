@@ -53,12 +53,12 @@ class GeminiClient(LLMClient):
             }
         }
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{self.model}:generateContent?key={self.api_key}")
         
         try:
             resp = await self.fetcher.post_json(
                 url,
-                params={"key": self.api_key},
                 json=payload,
                 timeout=self.timeout
             )
@@ -101,12 +101,12 @@ class GeminiClient(LLMClient):
             }
         }
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{self.model}:generateContent?key={self.api_key}")
         
         try:
             resp = await self.fetcher.post_json(
                 url,
-                params={"key": self.api_key},
                 json=payload,
                 timeout=self.timeout
             )

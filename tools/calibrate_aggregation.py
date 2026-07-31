@@ -132,7 +132,14 @@ async def score(prepared, scale: float, saturation: float, cfg: dict, bands: dic
     return {"scale": scale, "saturation": saturation, "libel": libel,
             "caught": caught, "n_bad": n_bad, "confirmed": confirmed,
             "n_true": n_true, "abstained": abstained, "exact": exact,
-            "margin": round(min(margin_true, margin_scam), 4)}
+            # The safety margin and the detection margin are different things and
+            # must not be collapsed with min(). Objective 4 is explicitly "the
+            # nearest GENUINE NOTICE sits furthest from the accusation line" —
+            # that is margin_true. Ranking on min(margin_true, margin_scam) let a
+            # detection-confidence number override safety, and it silently cost
+            # half the label accuracy (3.0/1.4 -> 2.75/1.2) for no safety gain.
+            "margin": round(margin_true, 4),
+            "margin_scam": round(margin_scam, 4)}
 
 
 async def main() -> int:
@@ -206,11 +213,12 @@ async def main() -> int:
 
     print()
     print(f"{'scale':>6} {'sat':>5} {'caught':>10} {'confirmed':>11} "
-          f"{'abstain':>8} {'exact':>6} {'margin':>8}")
+          f"{'abstain':>8} {'exact':>6} {'safety':>8} {'detect':>8}")
     for r in viable[:12]:
         print(f"{r['scale']:>6.1f} {r['saturation']:>5.1f} "
               f"{r['caught']:>4}/{r['n_bad']:<5} {r['confirmed']:>5}/{r['n_true']:<5} "
-              f"{r['abstained']:>8} {r['exact']:>6} {r['margin']:>8.3f}")
+              f"{r['abstained']:>8} {r['exact']:>6} {r['margin']:>8.3f} "
+              f"{r['margin_scam']:>8.3f}")
 
     best = viable[0]
     print(f"\nchosen: log_odds_per_unit_strength={best['scale']}  "
@@ -218,7 +226,10 @@ async def main() -> int:
     print(f"  catches {best['caught']}/{best['n_bad']} scams, "
           f"confirms {best['confirmed']}/{best['n_true']} genuine, "
           f"abstains {best['abstained']}/{len(prepared)}, libels 0")
-    print(f"  worst-case margin to an error: {best['margin']:.3f} posterior units")
+    print(f"  worst-case safety margin (nearest genuine notice to the accusation "
+          f"line): {best['margin']:.3f} posterior units")
+    print(f"  worst-case detection margin (weakest caught scam): "
+          f"{best['margin_scam']:.3f}")
 
     # The abstention rate is a designed property, not a leftover (ADR-0014).
     lo = th.f("verdict.abstention_target.lo")

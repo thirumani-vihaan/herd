@@ -81,12 +81,12 @@ aggregation:
   # itself calls "near-conclusive" could only move the posterior from 0.35 to
   # 0.55, and no combination of Tier-0 evidence could ever reach FALSE. This is
   # the conversion, and it is calibrated (T044b), not guessed.
-  log_odds_per_unit_strength: 2.75
+  log_odds_per_unit_strength: 3.0
 
   # Total raw rule weight at which a single agent is maximally confident.
   # Below it, strength scales linearly; it can never exceed 1.0, so no single
   # agent can saturate the posterior on its own.
-  agent_saturation: 1.2
+  agent_saturation: 1.0
 
   # Per-agent contradiction caps (docs/03). Support is uncapped where noted.
   # Note: Tier-0 support is NOT capped to stop it confirming claims — that is
@@ -165,15 +165,28 @@ agents:
       official_email: 0.40
 
   institutional_source:
+    # Cosine similarity at which a retrieved official notice is accepted as the
+    # same notice as the claim. NOT calibrated against a corpus — there are no
+    # labelled retrieval pairs yet. Chosen conservatively: high enough that a
+    # merely topical match ("placements") does not count as confirmation, since
+    # this agent is one of only two allowed to confirm a claim (ADR-0028), and a
+    # false confirmation is the most expensive error the system can make.
+    # TODO(T-retrieval-calibration): replace with a measured value.
     similarity_threshold: 0.85
-  
+
   official_channel:
+    # Same reasoning and the same open question as institutional_source.
+    # TODO(T-retrieval-calibration): replace with a measured value.
     similarity_threshold: 0.85
 
   open_web_research:
+    # Tier 3 is terminal and runs only when every cheaper tier abstained, so it
+    # may spend longer than a Tier 1 probe. Bounded by cascade.deadline_ms.
     timeout_s: 10.0
 
   llm_client:
+    # Extraction and prose share one budget. Longer than the research timeout
+    # because extraction blocks the whole pipeline rather than one agent.
     timeout_s: 15.0
 
 spread:
@@ -185,6 +198,12 @@ spread:
     # > logistic_to -> seir_hawkes
   interval_widening_no_message_time: 1.4   # ADR-0018 penalty for report-time only
   velocity:
+    # Report-density bands for the UI's spread indicator. These are presentation
+    # thresholds, NOT the calibrated spread model (ADR-0017) — they describe how
+    # many genuine, de-duplicated reports of one strain within a window count as
+    # "spreading". They are deliberate judgement, not measurement: 5 independent
+    # reports of the same strain inside 10 minutes on one campus is fast by
+    # inspection. They must never be used to project a future case count.
     high_count: 5
     high_minutes: 10
     medium_count: 3

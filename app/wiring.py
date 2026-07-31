@@ -16,6 +16,7 @@ from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMC
 from app.investigate.aggregate import Aggregator
 from app.intervene.delivery import TelegramNotifier, WebSocketNotifier
 from app.investigate.cascade import Cascade
+from app.recognise.strain import StrainEngine
 from app.investigate.agents import (
     ContactForensics, DomainForensics, FraudHeuristics,
     TemplateProvenance, URLSafety, StrainPrior,
@@ -38,6 +39,7 @@ class Container:
     embeddings: EmbeddingModel
     llm: LLMClient
     notifiers: list[Notifier]
+    strain_engine: StrainEngine
 
     def build_cascade(self, markers: ForwardMarkers | None = None) -> Cascade:
         """Construct a fresh Cascade for one investigation."""
@@ -99,6 +101,15 @@ def build_container(institution_id: str | None = None) -> Container:
     embeddings = SentenceTransformerEmbeddings()
     index = ChromaVectorIndex(persist_dir=str(Path(db_path_str).parent / 'chroma'))
     llm = GeminiClient(fetcher, settings.gemini_api_key, settings.gemini_model)
+    strain_engine = StrainEngine(
+        store=store,
+        embeddings=embeddings,
+        index=index,
+        same_strain=thresholds.f("strain.same_strain"),
+        mutation=thresholds.f("strain.mutation"),
+        amount_tolerance=thresholds.f("strain.amount_tolerance"),
+        min_content_chars=thresholds.i("strain.min_content_chars"),
+    )
     
     return Container(
         settings=settings,
@@ -114,4 +125,5 @@ def build_container(institution_id: str | None = None) -> Container:
             TelegramNotifier(getattr(settings, "telegram_token", None), getattr(settings, "telegram_admin_id", None)),
             WebSocketNotifier()
         ],
+        strain_engine=strain_engine,
     )
