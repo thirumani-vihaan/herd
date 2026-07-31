@@ -74,7 +74,7 @@ class Settings:
         self.log_level: str = os.getenv("LOG_LEVEL", "INFO").strip().upper()
 
         # --- tenancy ---
-        self.institution_id: str = os.getenv("HERD_INSTITUTION", "universal").strip()
+        self.institution_id: str = "universal"
         self.institutions_dir: Path = ROOT / "config" / "institutions"
 
         # --- storage ---
