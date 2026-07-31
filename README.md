@@ -117,7 +117,7 @@ graph LR
     S1(("🦠 Strain Cluster<br/>(Semantic Centroid)")):::strain
     S1 -->|Investigated ONCE| Verdict["🛑 FALSE (Scam)"]
     
-    R4("Report 4<br/>(Any Campus, Same Shape)"):::report -.->|Instant Cache Hit (0ms)| Verdict
+    R4("Report 4<br/>(Any Campus, Same Shape)"):::report -. "Instant Cache Hit (0ms)" .-> Verdict
 ```
 
 One student's investigation becomes permanent immunity for everyone who follows. Strain memory is **global**; institutional evidence is **scoped**. A scam template that cost one campus a full investigation is recognised instantly at the next one.
