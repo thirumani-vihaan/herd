@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   investigate,
   loadContext,
+  checkHealth,
   type AppContext,
   type Investigation,
 } from "./lib/api";
@@ -19,6 +20,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<AppContext | null>(null);
+  const [healthLatency, setHealthLatency] = useState<number | null>(null);
   const [feed, setFeed] = useState<FeedEntry[]>(() => {
     try {
       const stored = localStorage.getItem("herd_feed");
@@ -33,6 +35,10 @@ export default function App() {
     loadContext()
       .then(setCtx)
       .catch(() => setCtx(null));
+    
+    checkHealth().then((ms) => {
+      if (ms >= 0) setHealthLatency(ms);
+    });
   }, []);
 
   useEffect(() => {
@@ -173,12 +179,21 @@ export default function App() {
       </main>
 
       <footer className="mt-6 border-t border-rule">
-        <div className="mx-auto max-w-[1240px] px-6 py-7 sm:px-10">
+        <div className="mx-auto flex max-w-[1240px] items-center justify-between px-6 py-7 sm:px-10">
           <p className="max-w-2xl text-[12.5px] leading-relaxed text-faint">
             Every verdict on this page was produced by the same calibrated
             pipeline, offline-first, with no verdict written by a language
             model. The investigation analysis and prose are generated in real-time by <strong className="text-ink font-semibold">Featherless.ai</strong>; the underlying mathematical judgement is not.
           </p>
+          {healthLatency !== null && (
+            <div className="flex items-center gap-2 text-[12px] font-mono text-faint ml-8 flex-shrink-0">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-true opacity-50"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-true"></span>
+              </span>
+              API Status: Healthy ({healthLatency}ms)
+            </div>
+          )}
         </div>
       </footer>
     </div>

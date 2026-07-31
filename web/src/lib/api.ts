@@ -158,3 +158,15 @@ export async function investigate(input: {
   }
   return (await res.json()) as IngestResult;
 }
+
+export async function checkHealth(): Promise<number> {
+  const start = performance.now();
+  try {
+    const res = await fetch(`${API_URL}/health`);
+    if (!res.ok) return -1;
+    await res.json();
+    return Math.round(performance.now() - start);
+  } catch {
+    return -1;
+  }
+}
