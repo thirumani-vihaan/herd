@@ -272,6 +272,28 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     if not summary:
         summary = _fallback_summary(result)
 
+    # --- Meta-Analytic Autopsy ---
+    if result.aggregation.label.value == "UNVERIFIED" and container.llm.available():
+        try:
+            autopsy_prompt = (
+                f"The deterministic log-odds cascade resulted in an UNVERIFIED verdict. "
+                f"Here is the claim: {claim.text}\n"
+                f"Write a 1-sentence confidence calibration note indicating how the system interprets this, "
+                f"starting with 'Confidence Calibration Note: '."
+            )
+            payload = {
+                "contents": [{"parts": [{"text": autopsy_prompt}]}],
+                "generationConfig": {"responseMimeType": "text/plain"}
+            }
+            url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+                   f"{container.llm.model}:generateContent?key={container.llm.api_key}")
+            resp = await container.fetcher.post_json(url, json=payload, timeout=8.0)
+            cand = resp["candidates"][0]
+            autopsy_note = cand["content"]["parts"][0]["text"].strip()
+            summary += f"\n\n**{autopsy_note}**"
+        except Exception as exc:
+            pass # Fail gracefully, just return the standard summary
+
     # Velocity from the real report timestamps for this strain (ADR-0017: never
     # project from data we do not have).
     reports = await container.store.reports_for_strain(strain.id, inst.id)
