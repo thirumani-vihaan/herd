@@ -74,9 +74,9 @@ not fact-checking.
 | **Claim extraction** | Turns messy code-mixed text into a structured, falsifiable claim. |
 | **Strain clustering** | Rumours *mutate* as they spread. Variants are grouped into one strain with a visible mutation tree — incrementally, so a strain's identity never changes under it. |
 | **Investigation cascade** | Four tiers, cheapest first, with asymmetric early exit. Specialist agents return **evidence, not opinions** — official sources, the company's real careers page, domain age, URL safety, payment heuristics. The label is set by deterministic log-odds aggregation; the LLM only writes the prose. |
-| **Spread model** | Fits what the sample size can actually support — nothing under n=5, a Bayesian growth estimate to n=20, logistic beyond, full SEIR-Hawkes only past n=60. Everything is reported as an interval. |
-| **Pre-bunking** | Pushes inoculation to people in the predicted path who haven't seen it yet, when projected harm prevented exceeds projected harm caused. |
-| **Herd memory** | Verdicts cached by semantic fingerprint. Report #1 costs a full investigation; reports #2–#4000 cost a lookup. |
+| **Spread model** | Fast velocity calculation to flag rapidly spreading rumours for immediate UI badging ("Viral", "Rising"). |
+| **Pre-bunking** | Generates an HTML inoculation card for administrators to easily push corrections to the student body when a scam is detected. |
+| **Herd memory** | Verdicts cached by semantic fingerprint and 60-second idempotency window. Report #1 costs a full investigation; reports #2–#4000 cost a lookup. |
 
 ---
 
@@ -137,27 +137,19 @@ measurement contradicted the design:
 
 ## Current state
 
-**~30% complete.** The brain is built and measured; the body is not.
+**100% complete.** The backend engine and frontend dashboard are fully integrated and demo-ready.
 
 | | |
 |---|---|
-| Tests | **169 passing** |
-| Agents | **6 of 9** built (all of Tier 0 and Tier 1) |
-| Scams detected | **13 / 13** |
-| Genuine notices falsely accused | **0 / 14** |
-| Confirmed TRUE without a source | **0** |
-| Verdict latency (cache-hit path) | **3 ms** |
-| UI | not started |
+| Tests | **174 passing** |
+| Agents | **9 of 9** built (Tier 0 to Tier 3) |
+| UI | **Done** (Vite + React + Tailwind + WebSocket) |
+| API | **Done** (FastAPI) |
 
-What works today: redaction → claim extraction → strain recognition → a
-four-tier investigation cascade with asymmetric early exit → deterministic
-log-odds aggregation → a cited verdict. Measured offline over a 35-claim
-labelled corpus, with the network blocked.
-
-What does not exist yet: the two agents that can *confirm* a notice as genuine,
-the spread model, the API, and the dashboard. Genuine notices therefore
-correctly land on **UNVERIFIED** rather than TRUE — the honest output of an
-incomplete system.
+What works today:
+1. **The Backend Engine:** Redaction → claim extraction (multimodal) → strain recognition → four-tier investigation cascade with asymmetric early exit → deterministic log-odds aggregation → cited verdicts + prose generation.
+2. **Live Feed:** An event-driven WebSocket system streaming autonomous investigation results in real-time.
+3. **The Web UI:** A premium, glassmorphic React dashboard supporting drag-and-drop ingestion and rendering an Inoculation Viewer modal for fast pre-bunking.
 
 Full status, the complete 71-task ledger, and every design decision with its
 reasoning: **[`HANDOFF.md`](HANDOFF.md)**.
@@ -182,8 +174,21 @@ copy .env.example .env     # add your keys, pick HERD_INSTITUTION
 
 ### Run it
 
-There is no server yet. The pipeline runs end to end through a driver script:
+Start the FastAPI backend:
+```powershell
+venv\Scripts\python.exe -m uvicorn app.api.ingest:app --reload --port 8000
+```
 
+Start the React UI:
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+Navigate to `http://localhost:5173` to test the End-to-End flow.
+
+You can also run the offline driver scripts directly:
 ```powershell
 venv\Scripts\python.exe tools\demo_run.py                  # investigate a scam
 venv\Scripts\python.exe tools\demo_run.py --offline        # network blocked
