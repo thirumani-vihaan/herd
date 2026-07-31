@@ -28,9 +28,9 @@ export default function StrainPanel({ data }: { data: Investigation }) {
   const repeat = s.report_count > 1;
 
   return (
-    <section className="border border-rule bg-card px-7 py-6 shadow-plate">
+    <section className="mt-8 border-t border-rule pt-6">
       <div className="flex items-baseline justify-between">
-        <h3 className="font-display text-[19px] tracking-tight">Strain</h3>
+        <h3 className="text-[15px] font-semibold tracking-tight">Strain</h3>
         <span className="num text-[11px] text-faint">{s.id}</span>
       </div>
 

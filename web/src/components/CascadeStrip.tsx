@@ -12,12 +12,12 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
   const byTier = new Map(data.trace.map((t) => [t.tier, t]));
 
   return (
-    <section className="border border-rule bg-card shadow-plate">
-      <header className="flex items-baseline justify-between border-b border-rule px-7 py-5">
-        <h3 className="font-display text-[19px] tracking-tight">
+    <section className="section">
+      <header className="flex items-baseline justify-between pb-4">
+        <h3 className="text-[15px] font-semibold tracking-tight">
           The cascade
         </h3>
-        <p className="label">cheapest evidence first · stops when it can</p>
+        <p className="text-[11px] text-faint">Cheapest evidence first</p>
       </header>
 
       <ol>
@@ -28,19 +28,16 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
           return (
             <li
               key={tier}
-              className={`grid grid-cols-[3.2rem_1fr] gap-x-5 border-b border-rulesoft px-7 py-6 last:border-0 ${
-                spent ? "" : "opacity-45"
+              className={`grid grid-cols-[2.4rem_1fr] gap-x-5 border-t border-rulesoft py-5 ${
+                spent ? "" : "opacity-40"
               }`}
             >
-              <div className="pt-[2px]">
+              <div className="pt-[3px]">
                 <div
-                  className="num flex h-9 w-9 items-center justify-center border text-[13px]"
-                  style={{
-                    borderColor: spent ? L.hex : "#E5E2D6",
-                    color: spent ? L.hex : "#8C887A",
-                  }}
+                  className="num text-[12px]"
+                  style={{ color: spent ? L.hex : "#8E9199" }}
                 >
-                  {tier}
+                  T{tier}
                 </div>
               </div>
 
@@ -66,11 +63,11 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
                 </p>
 
                 {spent && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="mt-2.5 flex flex-wrap gap-2">
                     {t!.agents_run.map((a) => (
                       <span
                         key={a}
-                        className="num border border-rule px-2 py-[3px] text-[11px] text-ink"
+                        className="rounded bg-rulesoft px-2 py-1 font-mono text-[10.5px] text-muted"
                       >
                         {a}
                       </span>
@@ -78,7 +75,7 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
                     {t!.agents_skipped.map((a) => (
                       <span
                         key={a}
-                        className="num border border-dashed border-rule px-2 py-[3px] text-[11px] text-faint line-through decoration-faint/50"
+                        className="rounded bg-rulesoft px-2 py-1 font-mono text-[10.5px] text-faint line-through decoration-faint/50"
                         title="did not apply to this claim"
                       >
                         {a}
