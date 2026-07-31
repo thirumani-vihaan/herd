@@ -170,6 +170,12 @@ agents:
   official_channel:
     similarity_threshold: 0.85
 
+  open_web_research:
+    timeout_s: 10.0
+
+  llm_client:
+    timeout_s: 15.0
+
 spread:
   # ADR-0017 - the model is chosen by sample size, never by how it looks
   tiers:

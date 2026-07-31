@@ -21,12 +21,12 @@ from app.institution import get_institution
 from app.perceive.extract import extract_claim
 from app.perceive.redact import redact_text
 from app.wiring import build_container, Container
+from app.config import get_thresholds
 
 logger = logging.getLogger(__name__)
 
 # Idempotency cache: (hash) -> (tracking_id, timestamp)
 _cache: dict[str, tuple[str, float]] = {}
-CACHE_TTL = 60.0
 
 # Global container loaded at startup
 container: Container | None = None
@@ -115,7 +115,8 @@ async def ingest_report(
     now = time.time()
     
     # Clean cache
-    expired = [k for k, v in _cache.items() if now - v[1] > CACHE_TTL]
+    cache_ttl = float(get_thresholds().i("ingest.idempotency_window_s"))
+    expired = [k for k, v in _cache.items() if now - v[1] > cache_ttl]
     for k in expired:
         del _cache[k]
 

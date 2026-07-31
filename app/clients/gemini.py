@@ -20,7 +20,9 @@ class GeminiClient(LLMClient):
         self.fetcher = fetcher
         self.api_key = api_key
         self.model = model_name
-        self.timeout = 15.0
+        
+        from app.config import get_thresholds
+        self.timeout = get_thresholds().f("agents.llm_client.timeout_s")
 
     def available(self) -> bool:
         return bool(self.api_key)

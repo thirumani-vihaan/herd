@@ -26,7 +26,7 @@ class OpenWebResearch(InvestigationAgent):
         self.strength = th.f("aggregation.reliability.OpenWebResearch")
         self.model = self.settings.gemini_model
         self.api_key = self.settings.gemini_api_key
-        self.timeout = 10.0
+        self.timeout = th.f("agents.open_web_research.timeout_s")
 
     def applies_to(self, claim: Claim) -> bool:
         return bool(self.api_key)
