@@ -8,7 +8,8 @@ from app.investigate.agents.memory import StrainPrior
 from app.investigate.agents.tier0 import FraudHeuristics, TemplateProvenance, load_rules
 from app.investigate.agents.tier1 import ContactForensics, DomainForensics, URLSafety
 from app.investigate.agents.tier2 import InstitutionalSource, OfficialChannel
+from app.investigate.agents.tier3 import OpenWebResearch
 
 __all__ = ["ContactForensics", "DomainForensics", "FraudHeuristics", "StrainPrior",
            "TemplateProvenance", "URLSafety", "load_rules",
-           "InstitutionalSource", "OfficialChannel"]
+           "InstitutionalSource", "OfficialChannel", "OpenWebResearch"]

@@ -9,12 +9,15 @@ from app.clients.http import build_fetcher
 from app.config import get_settings, get_thresholds, Settings, Thresholds
 from app.contracts import Institution, ForwardMarkers
 from app.institution import get_institution
-from app.interfaces import Store, HttpFetcher
+from app.clients.embeddings import SentenceTransformerEmbeddings
+from app.clients.vector import ChromaVectorIndex
+from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel
 from app.investigate.aggregate import Aggregator
 from app.investigate.cascade import Cascade
 from app.investigate.agents import (
     ContactForensics, DomainForensics, FraudHeuristics,
-    TemplateProvenance, URLSafety, StrainPrior
+    TemplateProvenance, URLSafety, StrainPrior,
+    InstitutionalSource, OfficialChannel, OpenWebResearch
 )
 from app.storage.sqlite_store import SqliteStore
 
@@ -29,6 +32,8 @@ class Container:
     fetcher: HttpFetcher
     store: Store
     aggregator: Aggregator
+    index: VectorIndex
+    embeddings: EmbeddingModel
 
     def build_cascade(self, markers: ForwardMarkers | None = None) -> Cascade:
         """Construct a fresh Cascade for one investigation."""
@@ -52,7 +57,14 @@ class Container:
             # Tier 1
             DomainForensics(self.institution, self.fetcher),
             URLSafety(self.institution, self.fetcher),
-            ContactForensics(self.institution, self.fetcher)
+            ContactForensics(self.institution, self.fetcher),
+            
+            # Tier 2
+            InstitutionalSource(self.institution, self.index, self.embeddings),
+            OfficialChannel(self.institution, self.index, self.embeddings),
+            
+            # Tier 3
+            OpenWebResearch(self.fetcher)
         ]
         
         return Cascade(
@@ -80,6 +92,8 @@ def build_container(institution_id: str | None = None) -> Container:
         db_path_str = db_path_str.replace("sqlite:///", "")
     
     store = SqliteStore(Path(db_path_str))
+    embeddings = SentenceTransformerEmbeddings()
+    index = ChromaVectorIndex(persist_dir=str(Path(db_path_str).parent / 'chroma'))
     
     return Container(
         settings=settings,
@@ -88,4 +102,6 @@ def build_container(institution_id: str | None = None) -> Container:
         fetcher=fetcher,
         store=store,
         aggregator=aggregator,
+        index=index,
+        embeddings=embeddings,
     )

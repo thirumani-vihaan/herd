@@ -17,7 +17,8 @@ async def test_wiring():
     
     expected_agents = {
         "FraudHeuristics", "TemplateProvenance", "StrainPrior",
-        "DomainForensics", "URLSafety", "ContactForensics"
+        "DomainForensics", "URLSafety", "ContactForensics",
+        "InstitutionalSource", "OfficialChannel", "OpenWebResearch"
     }
     
     found_agents = set()
