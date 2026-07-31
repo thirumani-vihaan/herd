@@ -42,6 +42,9 @@ NEGATED_PAYMENT = re.compile(
     r"\b(fee|fees|charge|charges|payment|paid|cost|money)\b", re.I)
 JOB_CONTEXT = re.compile(r"\b(drive|recruit\w*|hiring|placement|internship|job|"
                          r"walk-?in|offer letter)\b", re.I)
+ENGAGEMENT_FARM = re.compile(r"\b(comment.*link|dm.*link|dm for link|follow.*comment|comment interested)\b", re.I)
+UNPAID_LABOR = re.compile(r"\b(unpaid.*learning|learning-focused|no stipend)\b", re.I)
+COMMISSION_ONLY = re.compile(r"\b(commission-based|performance-based stipend)\b", re.I)
 
 
 def load_rules(path: Path | None = None) -> dict[str, dict[str, Any]]:
@@ -206,6 +209,14 @@ class FraudHeuristics(InvestigationAgent):
             hit("limited_slots_register_now")
         if ent.organisations and (ent.upi_handles or (domains & FREEMAIL)):
             hit("sender_domain_mismatch")
+        
+        # New Internet Native Scam Vectors
+        if ENGAGEMENT_FARM.search(low):
+            hit("engagement_farming_link")
+        if UNPAID_LABOR.search(low):
+            hit("unpaid_exploitation")
+        if COMMISSION_ONLY.search(low):
+            hit("commission_only_scam")
 
         # The supporting side. Without it the rule set can only ever accuse.
         if domains and self.official_domains and self._all_official(domains):

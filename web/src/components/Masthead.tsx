@@ -21,7 +21,7 @@ export default function Masthead({ ctx }: { ctx: AppContext | null }) {
             </span>
           </div>
           <p className="mt-3 max-w-lg text-[13.5px] leading-relaxed text-paper/60">
-            An immune system for campus misinformation. It investigates a
+            A universal immune system for digital scams. It investigates a
             message the way a careful person would — cheapest checks first —
             and stops the moment it can honestly stop.
           </p>

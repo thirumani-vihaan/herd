@@ -73,6 +73,30 @@ rules:
     rationale: "Standard scarcity template pairing."
     applies_to: [placement, event, other]
 
+  - id: engagement_farming_link
+    signal: contradicts
+    strength: 0.45
+    correlation_group: engagement_farming
+    title: "Withholds application link to farm engagement"
+    rationale: "Requires followers or comments to receive the actual application link."
+    applies_to: [placement, other]
+
+  - id: unpaid_exploitation
+    signal: contradicts
+    strength: 0.40
+    correlation_group: unpaid_labor
+    title: "Unpaid labor disguised as learning"
+    rationale: "Exploitative internships offering no stipend."
+    applies_to: [placement, other]
+
+  - id: commission_only_scam
+    signal: contradicts
+    strength: 0.40
+    correlation_group: unpaid_labor
+    title: "Commission-only / Performance-based stipend"
+    rationale: "Transfers all risk to the candidate with zero base pay."
+    applies_to: [placement, other]
+
   # Supporting rules. A rule set that can only ever accuse is a rule set that
   # will accuse a genuine notice (docs/06).
   - id: official_domain_link

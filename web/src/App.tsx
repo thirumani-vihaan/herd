@@ -221,8 +221,8 @@ function Working() {
 function Standby() {
   const steps = [
     ["0", "Reads the message", "Pressure, payment shape, template lineage. Costs nothing."],
-    ["1", "Checks the infrastructure", "Domains, links and contact details against what the campus publishes."],
-    ["2", "Looks at the official record", "The only tier allowed to confirm that something is genuine."],
+    ["1", "Checks the infrastructure", "Domains, links and contact details against what is publicly published."],
+    ["2", "Looks at the official record", "The only tier allowed to confirm that something is genuinely official (Bypassed in Global Mode)."],
     ["3", "Searches the open web", "Bought only when everything cheaper had to abstain."],
   ];
 

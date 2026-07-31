@@ -1,9 +1,9 @@
 # HERD 📰
 *(Powered by Featherless.ai)*
 
-**An autonomous immune system for campus misinformation.**
+**An autonomous immune system for universal digital scams.**
 
-A message lands in the class group: *"Amazon off-campus drive for 2026 batch — register here, limited slots."* It has a logo. It has a deadline. Forty people forward it before anyone checks. Some register. Some pay the ₹750 "registration fee." Three days later someone finally says *"guys, this is fake."*
+A message lands in the class group: *"Amazon off-network drive for 2026 batch — register here, limited slots."* It has a logo. It has a deadline. Forty people forward it before anyone checks. Some register. Some pay the ₹750 "registration fee." Three days later someone finally says *"guys, this is fake."*
 
 Too late. The same thing happens every week — exams postponed, fest cancelled, fee deadline extended, this company is hiring. **The rumour always beats the correction.**
 
@@ -41,7 +41,7 @@ graph TD
     Cascade -->|Yields Evidence| Aggregator
     Aggregator -->|Computes Label| Synthesis
     Synthesis -->|Generates Report| Inoculation
-    Inoculation -->|Alerts Campus| User
+    Inoculation -->|Alerts network| User
 ```
 
 ---
@@ -78,7 +78,7 @@ flowchart TD
     T1 -->|Sufficient Evidence| Exit
 
     subgraph T2 ["Tier 2: The Official Record (500ms)"]
-        A7("🏛️ Institutional Knowledge Agent<br/>(RAG on Campus Docs)"):::agent
+        A7("🏛️ Institutional Knowledge Agent<br/>(RAG on network Docs)"):::agent
     end
 
     T2 -->|Evidence Ambiguous| T3
@@ -94,7 +94,7 @@ flowchart TD
 | Tier | Goal | Description |
 |---|---|---|
 | **Tier 0** | **Surface Reading** | Checks for classic scam heuristics—urgency, irregular payment shapes (UPI to personal accounts), and known template lineages. Costs nothing. |
-| **Tier 1** | **Infrastructure** | Checks domains, links, and contact details against what the campus publishes and global blocklists (Google Safe Browsing). |
+| **Tier 1** | **Infrastructure** | Checks domains, links, and contact details against what the network publishes and global blocklists (Google Safe Browsing). |
 | **Tier 2** | **Official Record** | The *only* tier allowed to confirm something is genuine. Checks internal institutional notices via RAG. |
 | **Tier 3** | **Open Web** | Uses Tavily Search API combined with **Featherless.ai** to actively scour the live internet and synthesize debunking evidence in real-time. Bought only when cheaper tiers abstain. |
 
@@ -118,10 +118,10 @@ graph LR
     S1(("🦠 Strain Cluster<br/>(Semantic Centroid)")):::strain
     S1 -->|Investigated ONCE| Verdict["🛑 FALSE (Scam)"]
     
-    R4("Report 4<br/>(Any Campus, Same Shape)"):::report -. "Instant Cache Hit (0ms)" .-> Verdict
+    R4("Report 4<br/>(Any network, Same Shape)"):::report -. "Instant Cache Hit (0ms)" .-> Verdict
 ```
 
-One student's investigation becomes permanent immunity for everyone who follows. Strain memory is **global**; institutional evidence is **scoped**. A scam template that cost one campus a full investigation is recognised instantly at the next one.
+One student's investigation becomes permanent immunity for everyone who follows. Strain memory is **global**; institutional evidence is **scoped**. A scam template that cost one network a full investigation is recognised instantly at the next one.
 
 ---
 

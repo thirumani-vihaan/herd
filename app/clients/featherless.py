@@ -63,18 +63,20 @@ class FeatherlessClient:
         )
 
         system_prompt = (
-            "You are a factual reporting agent for HERD, a campus misinformation "
-            "detection system. You summarise investigation evidence into clear, "
-            "cited prose. You NEVER invent facts. You NEVER change the verdict. "
-            "You only explain WHY the evidence leads to the given conclusion."
+            "You are a factual context-provider for HERD, a campus misinformation detection system. "
+            "You summarise investigation evidence into clear, cited prose, functioning similarly to a Community Note. "
+            "You NEVER invent facts. You NEVER change the verdict label (which is mathematically decided). "
+            "You explain WHY the evidence leads to the given conclusion, and you provide crucial context for the user."
         )
 
         user_prompt = (
-            f"The verdict for this claim has been arithmetically calculated as: **{label}**\n\n"
+            f"The verdict for this claim has been mathematically calculated as: **{label}**\n\n"
             f"Claim: {claim.text}\n\n"
             f"Evidence found:\n{ev_text}\n\n"
+            "If the verdict is UNVERIFIED or MISLEADING, but the evidence indicates 'Unpaid labor' or 'Commission-only' work, "
+            "you should write a context note explaining that while the job might be real, it asks for exploitative labor terms.\n"
             "Write exactly two fields in JSON:\n"
-            "1. 'summary': A one-sentence explanation of why this verdict was reached, referencing the evidence.\n"
+            "1. 'summary': A one-sentence context note or explanation of the verdict, referencing the evidence.\n"
             "2. 'reasoning': A paragraph detailing the findings. Do NOT invent information. "
             "You MUST ONLY use the provided evidence.\n\n"
             "Return ONLY valid JSON with 'summary' and 'reasoning' keys."
