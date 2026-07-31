@@ -194,13 +194,13 @@ silently keep purged commits alive locally. Delete them with
 
 | Metric | Value |
 |---|---|
-| Overall completion | **Backend 100% — every P0/P1 defect below is fixed and verified. UI pending.** |
+| Overall completion | **Backend and UI both working end to end; every P0/P1 defect below is fixed and verified.** |
 | Tests | **198 passing**, 0 failing (was 174; +24 Tier 2/Tier 3 tests) |
 | Corpus accuracy | **15/40 exact (38%)**, 13/18 scams FALSE, **0 harmful** |
 | Agents returning evidence | **9 of 9** (was 5 of 9) |
-| API | `/ingest` → real verdict, real strain, real velocity, generated prose |
+| API | `/ingest` → real verdict, real strain, real velocity, generated prose; `/context` → institution + samples |
 | First-request latency | **1.7 s** (was 40 s) |
-| UI | **Not yet working** — see D5, deferred by choice |
+| UI | **Working** — rebuilt from scratch; log-odds descent chart, cascade spend, evidence ledger |
 
 > **How four dead agents shipped with a green suite.** Every agent wraps
 > `_run()` in a broad `except Exception → status="unavailable"`. That rule is
@@ -256,11 +256,11 @@ Percentage-by-area:
 | Spread model | 100% (velocity from real persisted reports — D6 fixed) |
 | Delivery (Inoculation) | 100% |
 | API (FastAPI) | 100% |
-| UI (React/Vite) | **0% — will not install (D5), deferred** |
+| UI (React/Vite) | **100% — rebuilt from scratch (D5 fixed: deps were pinned to versions that do not exist)** |
 | Gates & evaluation harness | 25% |
 
-**Suggested fix order:** ~~D3 → D1/D2 → tests → D8 → D4 → D5 → D6~~ — **all done
-except D5 (UI), which is deferred by choice.** What was actually changed:
+**Suggested fix order:** ~~D3 → D1/D2 → tests → D8 → D4 → D5 → D6~~ — **all done,
+D5 included.** What was actually changed:
 
 | Defect | Fix |
 |---|---|
