@@ -1,4 +1,5 @@
 # HERD 📰
+*(Powered by Featherless.ai)*
 
 **An autonomous immune system for campus misinformation.**
 
@@ -95,7 +96,7 @@ flowchart TD
 | **Tier 0** | **Surface Reading** | Checks for classic scam heuristics—urgency, irregular payment shapes (UPI to personal accounts), and known template lineages. Costs nothing. |
 | **Tier 1** | **Infrastructure** | Checks domains, links, and contact details against what the campus publishes and global blocklists (Google Safe Browsing). |
 | **Tier 2** | **Official Record** | The *only* tier allowed to confirm something is genuine. Checks internal institutional notices via RAG. |
-| **Tier 3** | **Open Web** | Uses Tavily Search API combined with LLM reading to actively scour the live internet for debunking evidence. Bought only when cheaper tiers abstain. |
+| **Tier 3** | **Open Web** | Uses Tavily Search API combined with **Featherless.ai** to actively scour the live internet and synthesize debunking evidence in real-time. Bought only when cheaper tiers abstain. |
 
 ---
 
@@ -145,8 +146,8 @@ HERD deliberately separates AI concerns across providers to prevent hallucinated
 | **Frontend UI** | React, Vite, Tailwind CSS | Cinematic Newspaper UI with custom micro-animations and real-time feeds. |
 | **Verdict Engine** | Deterministic Log-Odds (SciPy) | Produces the final label arithmetically. **No LLM ever decides truth.** |
 | **Extraction & OCR** | Gemini API | Multimodal ingestion (Screenshot -> Text) and multilingual strain embeddings. |
-| **Prose Synthesis** | Featherless.ai (Qwen2.5) | Open-source model writes transparent, auditable explanations based purely on the aggregator's math. |
-| **Tier 3 RAG** | Tavily Search API | Actively searches the live internet to ground verdicts in real-time reality. |
+| **Prose Synthesis** | Featherless.ai (Qwen2.5) | Open-source model deployed via Featherless API handles the heavy lifting of writing transparent, auditable explanations based purely on the aggregator's math. |
+| **Tier 3 RAG** | Tavily Search + Featherless | Featherless.ai rapidly synthesizes real-time live internet data to ground verdicts in reality. |
 
 ---
 

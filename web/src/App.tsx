@@ -181,7 +181,7 @@ export default function App() {
           <p className="max-w-2xl text-[12.5px] leading-relaxed text-faint">
             Every verdict on this page was produced by the same calibrated
             pipeline, offline-first, with no verdict written by a language
-            model. The prose is generated; the judgement is not.
+            model. The investigation analysis and prose are generated in real-time by <strong className="text-ink font-semibold">Featherless.ai</strong>; the underlying mathematical judgement is not.
           </p>
         </div>
       </footer>
