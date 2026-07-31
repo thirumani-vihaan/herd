@@ -52,13 +52,15 @@ class OpenWebResearch(InvestigationAgent):
                 correlation_group=self.correlation_group, elapsed_ms=_ms(started))
 
         prompt = (
-            f"Fact-check this claim concerning {claim.institution_id}:\n"
-            f"\"{claim.text}\"\n\n"
-            "Search the web. Decide if the search results SUPPORT or CONTRADICT the claim, "
-            "or if it is NEUTRAL (unverifiable). "
-            "Return JSON with exactly two keys: 'signal' (must be 'supports', 'contradicts', or 'neutral') "
-            "and 'finding' (a summary of the facts found, with citations). "
-            "Do not state a final true/false verdict, just summarize the evidence direction."
+            "You are a Universal Scam Verification agent. Extract the company or organization mentioned in the following claim.\n"
+            f"Claim: \"{claim.text}\"\n\n"
+            "Search the web to find the official career page, official website, or verified social media of that specific company.\n"
+            "Verify if the specific internship or job mentioned actually exists on their official channels.\n"
+            "If the official channels confirm it, output 'supports'.\n"
+            "If the official channels exist but do NOT list this, or if the claim points to a fake domain, output 'contradicts'.\n"
+            "If you cannot find the company or cannot verify, output 'neutral'.\n"
+            "Return JSON with exactly two keys: 'signal' ('supports', 'contradicts', 'neutral') "
+            "and 'finding' (a summary of your verification process and facts found, with citations). "
         )
 
         url = (f"https://generativelanguage.googleapis.com/v1beta/models/"

@@ -56,6 +56,7 @@ verdict:
   confirming_agents:
     - InstitutionalSource
     - OfficialChannel
+    - OpenWebResearch
 
   # ADR-0026 - evidence that can shorten an investigation but never BE one.
   # Seeing this exact template at another college is a strong hint and a
