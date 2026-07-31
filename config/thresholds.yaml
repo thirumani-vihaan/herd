@@ -178,6 +178,11 @@ spread:
     logistic_to: 60
     # > logistic_to -> seir_hawkes
   interval_widening_no_message_time: 1.4   # ADR-0018 penalty for report-time only
+  velocity:
+    high_count: 5
+    high_minutes: 10
+    medium_count: 3
+    medium_minutes: 30
 
 alerting:
   # ADR-0019 - expected harm, not a threshold
