@@ -1,4 +1,5 @@
 import type { Investigation } from "../lib/api";
+import { useState } from "react";
 import { look } from "../lib/verdict";
 import BeliefAxis from "./BeliefAxis";
 
@@ -6,6 +7,26 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
   const L = look(data.verdict);
   const abstained =
     data.verdict === "UNVERIFIED" || data.verdict === "OUT_OF_SCOPE";
+
+  const isAdmin = typeof window !== 'undefined' && window.location.search.includes('admin=true');
+  const [overrideBusy, setOverrideBusy] = useState(false);
+
+  async function handleOverride(label: string) {
+    if (!confirm(`Are you sure you want to forcefully override this verdict to ${label}?`)) return;
+    setOverrideBusy(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${API_URL}/override/${data.strain.id}?label=${label}&secret=admin_secret`, { method: "POST" });
+      if (res.ok) {
+        alert("Verdict overridden successfully! The Live Feed will update shortly.");
+      } else {
+        alert("Failed to override verdict. Check server logs.");
+      }
+    } catch (e) {
+      alert("Error overriding verdict");
+    }
+    setOverrideBusy(false);
+  }
 
   return (
     <section
@@ -42,6 +63,15 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
               {data.highest_tier_reached}
             </dd>
           </div>
+          {isAdmin && (
+            <div className="mt-2 border-t border-rulesoft pt-2">
+              <dt className="label text-false mb-1">Admin Override</dt>
+              <dd className="flex gap-2 justify-end">
+                <button onClick={() => handleOverride('FALSE')} disabled={overrideBusy} className="px-2 py-1 bg-false text-paper text-xs rounded hover:opacity-80 disabled:opacity-50">FALSE</button>
+                <button onClick={() => handleOverride('TRUE')} disabled={overrideBusy} className="px-2 py-1 bg-true text-paper text-xs rounded hover:opacity-80 disabled:opacity-50">TRUE</button>
+              </dd>
+            </div>
+          )}
         </dl>
       </div>
 
