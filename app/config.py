@@ -56,6 +56,7 @@ class Settings:
         self.safe_browsing_key: str = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()
         self.telegram_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
         self.telegram_username: str = os.getenv("TELEGRAM_BOT_USERNAME", "").strip()
+        self.telegram_admin_id: str = os.getenv("TELEGRAM_ADMIN_ID", "").strip()
         self.reporter_salt: str = os.getenv("REPORTER_HASH_SALT", "dev-salt").strip()
 
         # --- mode ---

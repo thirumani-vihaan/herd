@@ -36,7 +36,9 @@ class TelegramNotifier(Notifier):
             if isinstance(alert, dict):
                 verdict = alert.get('verdict', 'UNKNOWN')
                 summary = alert.get('summary', '')
-                message = f"🚨 ALERT: {verdict}\n\n{summary}"
+                claim_text = alert.get('claim', {}).get('text', 'No claim text found.')
+                
+                message = f"🚨 ALERT: {verdict}\n\nCLAIM:\n\"{claim_text}\"\n\nANALYSIS:\n{summary}"
             
             await self.bot.send_message(chat_id=self.admin_chat_id, text=message)
             return 1
