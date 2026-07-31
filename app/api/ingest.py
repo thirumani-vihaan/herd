@@ -90,11 +90,17 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     else:
         summary = "Investigation complete."
     
-    # Store or trigger delivery (to be built in Task 8)
-    return {
+    payload = {
         "verdict": result.aggregation.label.value,
         "summary": summary
     }
+
+    # Task 8: Deliver via Notifiers
+    for notifier in container.notifiers:
+        if notifier.available():
+            await notifier.send(payload)
+            
+    return payload
 
 
 @app.post("/ingest", response_model=IngestResponse)

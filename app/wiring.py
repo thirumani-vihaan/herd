@@ -12,8 +12,9 @@ from app.institution import get_institution
 from app.clients.embeddings import SentenceTransformerEmbeddings
 from app.clients.vector import ChromaVectorIndex
 from app.clients.gemini import GeminiClient
-from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMClient
+from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMClient, Notifier
 from app.investigate.aggregate import Aggregator
+from app.intervene.delivery import TelegramNotifier, WebSocketNotifier
 from app.investigate.cascade import Cascade
 from app.investigate.agents import (
     ContactForensics, DomainForensics, FraudHeuristics,
@@ -36,6 +37,7 @@ class Container:
     index: VectorIndex
     embeddings: EmbeddingModel
     llm: LLMClient
+    notifiers: list[Notifier]
 
     def build_cascade(self, markers: ForwardMarkers | None = None) -> Cascade:
         """Construct a fresh Cascade for one investigation."""
@@ -108,4 +110,8 @@ def build_container(institution_id: str | None = None) -> Container:
         index=index,
         embeddings=embeddings,
         llm=llm,
+        notifiers=[
+            TelegramNotifier(getattr(settings, "telegram_token", None), getattr(settings, "telegram_admin_id", None)),
+            WebSocketNotifier()
+        ],
     )
