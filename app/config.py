@@ -52,12 +52,21 @@ class Settings:
 
         # --- secrets: read here, nowhere else ---
         self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "").strip()
-        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+        self.gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
         self.safe_browsing_key: str = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()
         self.telegram_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
         self.telegram_username: str = os.getenv("TELEGRAM_BOT_USERNAME", "").strip()
         self.telegram_admin_id: str = os.getenv("TELEGRAM_ADMIN_ID", "").strip()
         self.reporter_salt: str = os.getenv("REPORTER_HASH_SALT", "dev-salt").strip()
+
+        # --- Featherless.ai (open-source LLM inference) ---
+        self.featherless_api_key: str = os.getenv("FEATHERLESS_API_KEY", "").strip()
+        self.featherless_model: str = os.getenv(
+            "FEATHERLESS_MODEL", "Qwen/Qwen2.5-7B-Instruct"
+        ).strip()
+        self.featherless_base_url: str = os.getenv(
+            "FEATHERLESS_BASE_URL", "https://api.featherless.ai/v1"
+        ).strip()
 
         # --- mode ---
         self.demo_mode: str = os.getenv("DEMO_MODE", "live").strip().lower()

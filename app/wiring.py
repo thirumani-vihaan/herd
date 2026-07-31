@@ -12,6 +12,7 @@ from app.institution import get_institution
 from app.clients.embeddings import SentenceTransformerEmbeddings, HashingEmbeddings, GeminiEmbeddings
 from app.clients.vector import ChromaVectorIndex
 from app.clients.gemini import GeminiClient
+from app.clients.featherless import FeatherlessClient
 from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMClient, Notifier
 from app.investigate.aggregate import Aggregator
 from app.intervene.delivery import TelegramNotifier, WebSocketNotifier
@@ -38,6 +39,7 @@ class Container:
     index: VectorIndex
     embeddings: EmbeddingModel
     llm: LLMClient
+    featherless: FeatherlessClient
     notifiers: list[Notifier]
     strain_engine: StrainEngine
 
@@ -101,6 +103,12 @@ def build_container(institution_id: str | None = None) -> Container:
     embeddings = GeminiEmbeddings(api_key=settings.gemini_api_key)
     index = ChromaVectorIndex(persist_dir=str(Path(db_path_str).parent / 'chroma'))
     llm = GeminiClient(fetcher, settings.gemini_api_key, settings.gemini_model)
+    featherless = FeatherlessClient(
+        fetcher,
+        api_key=settings.featherless_api_key,
+        model=settings.featherless_model,
+        base_url=settings.featherless_base_url,
+    )
     strain_engine = StrainEngine(
         store=store,
         embeddings=embeddings,
@@ -121,6 +129,7 @@ def build_container(institution_id: str | None = None) -> Container:
         index=index,
         embeddings=embeddings,
         llm=llm,
+        featherless=featherless,
         notifiers=[
             TelegramNotifier(getattr(settings, "telegram_token", None), getattr(settings, "telegram_admin_id", None)),
             WebSocketNotifier()

@@ -79,8 +79,10 @@ class HttpxFetcher:
         r = await self._request("GET", url, timeout=timeout)
         return r.text
 
-    async def post_json(self, url: str, *, json: dict, timeout: float = 8.0) -> dict:
-        r = await self._request("POST", url, timeout=timeout, json=json)
+    async def post_json(self, url: str, *, json: dict, timeout: float = 8.0,
+                        headers: dict | None = None) -> dict:
+        r = await self._request("POST", url, timeout=timeout, json=json,
+                                headers=headers)
         return r.json()
 
 
@@ -106,7 +108,8 @@ class BlockedFetcher:
         self.attempts.append(url)
         raise ConnectionError(self.reason)
 
-    async def post_json(self, url: str, *, json: dict, timeout: float = 8.0) -> dict:
+    async def post_json(self, url: str, *, json: dict, timeout: float = 8.0,
+                        headers: dict | None = None) -> dict:
         self.attempts.append(url)
         raise ConnectionError(self.reason)
 

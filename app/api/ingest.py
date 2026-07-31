@@ -218,14 +218,30 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     cascade = container.build_cascade(markers)
     result = await cascade.run(claim, strain)
 
+    # Prose synthesis: Featherless.ai (primary) → Gemini (fallback) → deterministic
+    # The verdict label is already fixed by the aggregator. The prose layer only
+    # explains the evidence — it never changes the conclusion.
     summary = ""
-    if container.llm.available():
+
+    # Primary: Featherless.ai open-source model for transparent prose generation
+    if container.featherless.available():
+        prose = await container.featherless.write_prose(
+            label=result.aggregation.label.value,
+            evidence=result.evidence,
+            claim=claim
+        )
+        summary = (prose.get("summary") or "").strip()
+
+    # Fallback: Gemini for prose if Featherless is unavailable or fails
+    if not summary and container.llm.available():
         prose = await container.llm.write_prose(
             label=result.aggregation.label.value,
             evidence=result.evidence,
             claim=claim
         )
         summary = (prose.get("summary") or "").strip()
+
+    # Final fallback: deterministic summary from evidence
     if not summary:
         summary = _fallback_summary(result)
 
