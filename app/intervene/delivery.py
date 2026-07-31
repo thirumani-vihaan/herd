@@ -19,7 +19,6 @@ class TelegramNotifier(Notifier):
     def __init__(self, token: str | None, admin_chat_id: str | None) -> None:
         self.token = token
         self.admin_chat_id = admin_chat_id
-        self.bot = Bot(token) if token else None
         
     def available(self) -> bool:
         return bool(self.token and self.admin_chat_id)
@@ -28,7 +27,7 @@ class TelegramNotifier(Notifier):
         """Send the alert. Returns number of successful deliveries.
         MUST NEVER RAISE.
         """
-        if not self.available() or not self.bot:
+        if not self.available():
             return 0
             
         try:
@@ -40,7 +39,8 @@ class TelegramNotifier(Notifier):
                 
                 message = f"🚨 ALERT: {verdict}\n\nCLAIM:\n\"{claim_text}\"\n\nANALYSIS:\n{summary}"
             
-            await self.bot.send_message(chat_id=self.admin_chat_id, text=message)
+            async with Bot(self.token) as bot:
+                await bot.send_message(chat_id=self.admin_chat_id, text=message)
             return 1
         except TelegramError as e:
             logger.error(f"Telegram delivery failed: {e}")
