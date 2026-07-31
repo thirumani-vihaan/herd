@@ -9,15 +9,15 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
 
   return (
     <section
-      className="animate-rise"
-      style={{ borderTop: `2px solid ${L.hex}` }}
+      className="animate-rise border border-rule bg-card shadow-plate"
+      style={{ borderTop: `3px solid ${L.hex}` }}
     >
-      <div className="pt-9 sm:pt-10">
+      <div className="px-8 py-10 sm:px-14 sm:py-12">
       <div className="flex items-start justify-between gap-8">
         <div className="min-w-0">
-          <p className="text-[12px] font-medium text-faint">Verdict</p>
+          <p className="label">the verdict</p>
           <h2
-            className="mt-2 text-[clamp(2.8rem,7.5vw,5rem)] font-semibold leading-[0.9] tracking-[-0.035em]"
+            className="font-display mt-3 text-[clamp(3.2rem,8.5vw,6rem)] leading-[0.86] tracking-tight"
             style={{ color: L.hex }}
           >
             {L.plain}

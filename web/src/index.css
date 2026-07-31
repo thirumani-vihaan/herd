@@ -10,11 +10,17 @@
 
   body {
     @apply bg-paper text-ink font-sans antialiased;
+    /* A faint paper grain. The surface should read as a record, not a screen. */
+    background-image: radial-gradient(
+      rgba(22, 21, 15, 0.022) 1px,
+      transparent 1px
+    );
+    background-size: 3px 3px;
   }
 
   ::selection {
-    background: #131416;
-    color: #fdfdfc;
+    background: #16150f;
+    color: #fbfaf7;
   }
 }
 
@@ -25,24 +31,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /*
-   * Field labels. Small, quiet, and set in the same mono as the numbers they
-   * caption, so a label and its value read as one object.
-   */
   .label {
-    @apply font-mono text-[10.5px] uppercase tracking-[0.09em] text-faint;
+    @apply font-mono text-[10px] uppercase tracking-[0.16em] text-faint;
   }
 
-  /*
-   * Sections are separated by space and a single rule, not by boxes.
-   * A page full of bordered cards reads as a component gallery; a page of
-   * ruled sections reads as a document, which is what this is.
-   */
-  .section {
-    @apply border-t border-ink/[0.14] pt-6;
-  }
-
-  .row {
-    @apply border-t border-rulesoft;
+  .rule-t {
+    @apply border-t border-rule;
   }
 }

@@ -1,9 +1,9 @@
 import type { EvidenceItem, Investigation } from "../lib/api";
 
 const SIGNAL_COLOR: Record<string, string> = {
-  contradicts: "#C0322A",
-  supports: "#0E7150",
-  neutral: "#8E9199",
+  contradicts: "#A32017",
+  supports: "#14624A",
+  neutral: "#8C887A",
 };
 
 const SIGNAL_WORD: Record<string, string> = {
@@ -27,10 +27,10 @@ export default function EvidenceLedger({ data }: { data: Investigation }) {
   const citations = spoke.reduce((n, e) => n + e.sources.length, 0);
 
   return (
-    <section className="section">
-      <header className="flex items-baseline justify-between pb-4">
-        <h3 className="text-[15px] font-semibold tracking-tight">Evidence</h3>
-        <p className="text-[11px] text-faint">
+    <section className="border border-rule bg-card shadow-plate">
+      <header className="flex items-baseline justify-between border-b border-rule px-7 py-5">
+        <h3 className="font-display text-[19px] tracking-tight">Evidence</h3>
+        <p className="label">
           {spoke.length} spoke · {citations} citation
           {citations === 1 ? "" : "s"} · {silent.length} silent
         </p>
@@ -43,7 +43,7 @@ export default function EvidenceLedger({ data }: { data: Investigation }) {
       </ul>
 
       {silent.length > 0 && (
-        <div className="border-t border-rulesoft pt-5">
+        <div className="border-t border-rulesoft px-7 py-5">
           <p className="label">silent</p>
           <ul className="mt-3 space-y-1.5">
             {silent.map((e) => (
@@ -69,10 +69,10 @@ export default function EvidenceLedger({ data }: { data: Investigation }) {
 }
 
 function Row({ e }: { e: EvidenceItem }) {
-  const color = SIGNAL_COLOR[e.signal] ?? "#8E9199";
+  const color = SIGNAL_COLOR[e.signal] ?? "#8C887A";
 
   return (
-    <li className="border-t border-rulesoft py-5">
+    <li className="border-b border-rulesoft px-7 py-6 last:border-0">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <div className="flex items-baseline gap-3">
           <span
@@ -82,7 +82,7 @@ function Row({ e }: { e: EvidenceItem }) {
           >
             {e.signal === "supports" ? "+" : e.signal === "contradicts" ? "−" : "·"}
           </span>
-          <h4 className="text-[14px] font-medium text-ink">{e.agent}</h4>
+          <h4 className="num text-[14px] text-ink">{e.agent}</h4>
           <span className="label">
             tier {e.tier} · {SIGNAL_WORD[e.signal] ?? e.signal}
           </span>

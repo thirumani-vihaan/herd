@@ -29,16 +29,16 @@ export default function ReportSlip({
             isFrequentlyForwarded: freq,
           });
       }}
-      className="pb-0"
+      className="border border-rule bg-card shadow-plate"
     >
-      <header className="flex items-baseline justify-between pb-4">
-        <h3 className="shrink-0 text-[15px] font-semibold tracking-tight">
+      <header className="flex items-baseline justify-between border-b border-rule px-7 py-5">
+        <h3 className="font-display shrink-0 text-[19px] tracking-tight">
           Report a message
         </h3>
-        <p className="text-[11px] text-faint">Private by design</p>
+        <p className="label">nothing here identifies you</p>
       </header>
 
-      <div className="border-t border-rulesoft pt-5">
+      <div className="px-7 py-6">
         <label htmlFor="msg" className="label">
           what did you receive
         </label>
@@ -49,7 +49,7 @@ export default function ReportSlip({
           rows={9}
           spellCheck={false}
           placeholder="Paste the message exactly as it arrived. Phone numbers, UPI handles and links are stripped before anything is stored."
-          className="mt-2 w-full resize-none rounded-lg border border-rule bg-card px-4 py-3 text-[13.5px] leading-relaxed text-ink outline-none transition-colors placeholder:text-faint focus:border-ink"
+          className="mt-2 w-full resize-none border border-rule bg-paper px-4 py-3 font-mono text-[13.5px] leading-relaxed text-ink outline-none placeholder:text-faint focus:border-ink"
         />
 
         <div className="mt-5 space-y-3">
@@ -70,7 +70,7 @@ export default function ReportSlip({
         <button
           type="submit"
           disabled={!text.trim() || busy}
-          className="mt-7 w-full rounded-lg bg-ink px-5 py-3.5 text-[14px] font-medium text-white transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-30"
+          className="mt-7 w-full bg-ink px-5 py-3.5 text-[14px] font-medium tracking-tight text-paper transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
         >
           {busy ? "Investigating…" : "Run the investigation"}
         </button>
@@ -79,7 +79,7 @@ export default function ReportSlip({
           <p className="label">
             {samples.length ? "or try one" : "samples load with the service"}
           </p>
-          <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {samples.map((s) => (
               <button
                 key={s.label}
@@ -89,7 +89,7 @@ export default function ReportSlip({
                   setFwd(s.forwarded);
                   setFreq(s.forwarded);
                 }}
-                className="rounded-full bg-rulesoft px-3 py-1.5 text-[12.5px] text-muted transition-colors hover:bg-rule hover:text-ink"
+                className="border border-rule px-3 py-1.5 text-[12.5px] text-muted transition-colors hover:border-ink hover:text-ink"
               >
                 {s.label}
               </button>

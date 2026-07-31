@@ -51,15 +51,15 @@ export default function App() {
     <div className="min-h-screen">
       <Masthead ctx={ctx} />
 
-      <main className="mx-auto grid max-w-[1240px] gap-x-12 gap-y-8 px-6 py-12 sm:px-10 lg:grid-cols-[minmax(300px,360px)_1fr] lg:items-start">
-        <div className="lg:sticky lg:top-8 lg:border-r lg:border-rule lg:pr-11">
+      <main className="mx-auto grid max-w-[1240px] gap-7 px-6 py-11 sm:px-10 lg:grid-cols-[minmax(320px,390px)_1fr] lg:items-start">
+        <div className="space-y-6 lg:sticky lg:top-8">
           <ReportSlip onSubmit={run} busy={busy} samples={ctx?.samples ?? []} />
           {data && <StrainPanel data={data} />}
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-7">
           {error && (
-            <div className="border-l-2 border-false pl-5">
+            <div className="border border-false/40 bg-card px-7 py-5">
               <p className="label text-false">could not investigate</p>
               <p className="mt-2 text-[14px] text-ink">{error}</p>
               <p className="mt-2 text-[13px] text-muted">
@@ -101,7 +101,7 @@ export default function App() {
 
 function Working() {
   return (
-    <section className="animate-rise border-t border-rule py-20 text-center">
+    <section className="animate-rise border border-rule bg-card px-8 py-20 text-center shadow-plate">
       <div className="mx-auto flex w-fit items-end gap-1.5" aria-hidden>
         {[0, 1, 2, 3].map((i) => (
           <span
@@ -132,9 +132,9 @@ function Standby() {
   ];
 
   return (
-    <section className="border-t border-rule pt-10">
-      <p className="text-[12px] font-medium text-faint">How it works</p>
-      <h2 className="mt-3 max-w-2xl text-[clamp(1.7rem,3.5vw,2.5rem)] font-semibold leading-[1.08] tracking-[-0.035em]">
+    <section className="border border-rule bg-card px-8 py-12 shadow-plate sm:px-14 sm:py-14">
+      <p className="label">standby</p>
+      <h2 className="font-display mt-4 max-w-2xl text-[clamp(2rem,4vw,2.9rem)] leading-[1.05] tracking-tight">
         It does not guess, and it will tell you when it doesn't know.
       </h2>
       <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted">
