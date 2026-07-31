@@ -102,12 +102,29 @@ class GeminiEmbeddings(EmbeddingModel):
         if not texts:
             return []
         
-        # We must truncate or batch if texts is huge, but our chunks are small.
+        # Deduplicate to avoid the API dropping identical inputs silently
+        unique_texts = []
+        for t in texts:
+            if t not in unique_texts:
+                unique_texts.append(t)
+                
         response = self.client.models.embed_content(
             model="gemini-embedding-2",
-            contents=list(texts)
+            contents=unique_texts
         )
-        return [emb.values for emb in response.embeddings]
+        
+        # Handle cases where safety blocks might return fewer embeddings
+        if not response.embeddings or len(response.embeddings) < len(unique_texts):
+            # If the API drops items (e.g. safety filters), fallback to 0 vectors 
+            # to avoid misaligned mapping or crashes.
+            emb_map = {t: [0.0] * self._dim for t in unique_texts}
+            for i, emb in enumerate(response.embeddings or []):
+                if i < len(unique_texts):
+                    emb_map[unique_texts[i]] = emb.values
+        else:
+            emb_map = {t: e.values for t, e in zip(unique_texts, response.embeddings)}
+            
+        return [emb_map[t] for t in texts]
 
     @property
     def dim(self) -> int:
