@@ -52,7 +52,7 @@ class OpenWebResearch(InvestigationAgent):
                 correlation_group=self.correlation_group, elapsed_ms=_ms(started))
 
         prompt = (
-            "You are a Universal Scam Verification agent. Extract the company or organization mentioned in the following claim.\n"
+            "You are a scam and misinformation verification agent. Extract the company or organization mentioned in the following claim.\n"
             f"Claim: \"{claim.text}\"\n\n"
             "Search the web to find the official career page, official website, or verified social media of that specific company.\n"
             "Verify if the specific internship or job mentioned actually exists on their official channels.\n"

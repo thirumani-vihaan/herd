@@ -60,7 +60,7 @@ _rate_limits = defaultdict(list)
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     # Exclude websockets and context endpoint if necessary, but we'll apply it globally
-    if request.url.path == "/context":
+    if request.url.path in ("/context", "/health"):
         return await call_next(request)
         
     client_ip = request.client.host if request.client else "unknown"
@@ -336,6 +336,18 @@ def _fallback_summary(result: Any) -> str:
     top = sorted(spoke, key=lambda e: e.strength, reverse=True)[:2]
     reasons = "; ".join(e.finding for e in top)
     return f"{result.aggregation.label.value}: {reasons}"
+
+
+@app.get("/health")
+async def health():
+    """Liveness/readiness probe consumed by the UI latency indicator and by
+    platform health checks. Returns quickly and never depends on downstream
+    services, so a degraded dependency never makes the process look dead.
+    """
+    return {
+        "status": "ok" if container is not None else "starting",
+        "institution": container.institution.id if container is not None else None,
+    }
 
 
 @app.get("/context")

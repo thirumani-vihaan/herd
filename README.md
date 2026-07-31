@@ -13,16 +13,6 @@ HERD treats a rumour as an **infection, not a document**. It intercepts suspicio
 
 ---
 
-## 🏆 Hackathon Submission Links
-
-- **Live Demo (Frontend):** [https://herd-frontend.vercel.app](https://herd-frontend.vercel.app) *(Replace with actual Vercel URL)*
-- **Live API (Backend):** [https://herd-backend.onrender.com](https://herd-backend-ofrf.onrender.com/docs) *(Replace with actual Render URL if different)*
-- **Demo Video (60s):** [Insert YouTube/Loom Link Here]
-
----
-
----
-
 ## 🏛️ System Architecture
 
 HERD operates on an offline-first, intercept-and-inoculate architecture. It ingests claims, extracts falsifiable data, clusters them by evolutionary strain, and runs an asynchronous investigation cascade.

@@ -53,7 +53,10 @@ verdict:
   # only binds at particular values of log_odds_per_unit_strength, so a later
   # recalibration would silently re-enable unfounded confirmations.
   true_requires_confirmation: true
-  confirming_agents: []
+  confirming_agents:
+    - InstitutionalSource
+    - OfficialChannel
+    - OpenWebResearch
 
   # ADR-0026 - evidence that can shorten an investigation but never BE one.
   # Seeing this exact template at another college is a strong hint and a

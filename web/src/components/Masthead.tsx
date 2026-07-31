@@ -21,7 +21,7 @@ export default function Masthead({ ctx }: { ctx: AppContext | null }) {
             </span>
           </div>
           <p className="mt-3 max-w-lg text-[13.5px] leading-relaxed text-paper/60">
-            A universal immune system for digital scams. It investigates a
+            An immune system for digital scams. It investigates a
             message the way a careful person would — cheapest checks first —
             and stops the moment it can honestly stop.
           </p>
@@ -40,7 +40,7 @@ export default function Masthead({ ctx }: { ctx: AppContext | null }) {
           <Stat k="watching" v={ctx?.institution.short_name ?? "—"} />
           <Stat k="tiers" v="4" />
           <Stat k="agents" v={ctx ? String(ctx.agent_count) : "—"} />
-          <Stat k="community note by" v="Universal AI" />
+          <Stat k="community note by" v="HERD AI" />
         </dl>
       </div>
     </header>

@@ -9,6 +9,10 @@
       "destination": "https://herd-backend-ofrf.onrender.com/context"
     },
     {
+      "source": "/health",
+      "destination": "https://herd-backend-ofrf.onrender.com/health"
+    },
+    {
       "source": "/override/:path*",
       "destination": "https://herd-backend-ofrf.onrender.com/override/:path*"
     },
