@@ -88,15 +88,15 @@ class HashingEmbeddings(EmbeddingModel):
         return self._dim
 
 class GeminiEmbeddings(EmbeddingModel):
-    """Network-based embeddings using Gemini text-embedding-004.
+    """Network-based embeddings using Gemini.
     
-    This provides maximum accuracy (768-dim semantic vectors) with zero local
-    memory overhead, making it ideal for free-tier deployments.
+    This provides maximum accuracy with zero local memory overhead, 
+    making it ideal for free-tier deployments.
     """
     def __init__(self, api_key: str) -> None:
         from google import genai
         self.client = genai.Client(api_key=api_key)
-        self._dim = 768
+        self._dim = 3072
         
     def encode(self, texts: Sequence[str]) -> list[list[float]]:
         if not texts:
@@ -104,7 +104,7 @@ class GeminiEmbeddings(EmbeddingModel):
         
         # We must truncate or batch if texts is huge, but our chunks are small.
         response = self.client.models.embed_content(
-            model="text-embedding-004",
+            model="gemini-embedding-2",
             contents=list(texts)
         )
         return [emb.values for emb in response.embeddings]
