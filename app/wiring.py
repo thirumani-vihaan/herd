@@ -9,7 +9,7 @@ from app.clients.http import build_fetcher
 from app.config import get_settings, get_thresholds, Settings, Thresholds
 from app.contracts import Institution, ForwardMarkers
 from app.institution import get_institution
-from app.clients.embeddings import SentenceTransformerEmbeddings, HashingEmbeddings
+from app.clients.embeddings import SentenceTransformerEmbeddings, HashingEmbeddings, GeminiEmbeddings
 from app.clients.vector import ChromaVectorIndex
 from app.clients.gemini import GeminiClient
 from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMClient, Notifier
@@ -98,7 +98,7 @@ def build_container(institution_id: str | None = None) -> Container:
         db_path_str = db_path_str.replace("sqlite:///", "")
     
     store = SqliteStore(Path(db_path_str))
-    embeddings = HashingEmbeddings()
+    embeddings = GeminiEmbeddings(api_key=settings.gemini_api_key)
     index = ChromaVectorIndex(persist_dir=str(Path(db_path_str).parent / 'chroma'))
     llm = GeminiClient(fetcher, settings.gemini_api_key, settings.gemini_model)
     strain_engine = StrainEngine(
