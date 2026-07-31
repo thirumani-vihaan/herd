@@ -58,6 +58,7 @@ class Settings:
         self.telegram_username: str = os.getenv("TELEGRAM_BOT_USERNAME", "").strip()
         self.telegram_admin_id: str = os.getenv("TELEGRAM_ADMIN_ID", "").strip()
         self.reporter_salt: str = os.getenv("REPORTER_HASH_SALT", "dev-salt").strip()
+        self.tavily_api_key: str = os.getenv("TAVILY_API_KEY", "").strip()
 
         # --- Featherless.ai (open-source LLM inference) ---
         self.featherless_api_key: str = os.getenv("FEATHERLESS_API_KEY", "").strip()
