@@ -147,17 +147,13 @@ export default function App() {
           <FeedPanel entries={feed} />
         </div>
 
-        <div className="space-y-7">
+        <div className="space-y-7" aria-live="polite">
           {error && (
-            <div className="border border-false/40 bg-card px-7 py-5">
-              <p className="label text-false">could not investigate</p>
+            <div className="border border-false/40 bg-card px-7 py-5" role="alert">
+              <p className="label text-false">Service Unavailable</p>
               <p className="mt-2 text-[14px] text-ink">{error}</p>
               <p className="mt-2 text-[13px] text-muted">
-                Start the service with{" "}
-                <code className="num text-[12px]">
-                  venv\Scripts\python.exe -m uvicorn app.api.ingest:app
-                </code>
-                .
+                Our global network is currently unreachable. Please check your internet connection or try again in a few moments.
               </p>
             </div>
           )}
@@ -191,7 +187,11 @@ export default function App() {
 
 function Working() {
   return (
-    <section className="animate-rise border-2 border-rule bg-card px-8 py-24 text-center shadow-plate relative overflow-hidden">
+    <section 
+      className="animate-rise border-2 border-rule bg-card px-8 py-24 text-center shadow-plate relative overflow-hidden"
+      aria-busy="true"
+      aria-live="assertive"
+    >
       <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-[0.08]">
         <div className="h-full w-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] animate-scan" style={{ backgroundSize: '100px 100px' }}></div>
       </div>

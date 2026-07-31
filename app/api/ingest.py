@@ -10,10 +10,12 @@ import hashlib
 import logging
 import time
 import uuid
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
-from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.contracts import ForwardMarkers, Report, Strain
@@ -51,6 +53,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Rate Limiting: 30 requests per IP per minute
+_rate_limits = defaultdict(list)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Exclude websockets and context endpoint if necessary, but we'll apply it globally
+    if request.url.path == "/context":
+        return await call_next(request)
+        
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Prune old timestamps
+    _rate_limits[client_ip] = [t for t in _rate_limits[client_ip] if now - t < 60]
+    
+    if len(_rate_limits[client_ip]) >= 30:
+        return JSONResponse(status_code=429, content={"detail": "Too many requests. Please try again in a minute."})
+        
+    _rate_limits[client_ip].append(now)
+    return await call_next(request)
 
 # Allow CORS for UI dev
 from fastapi.middleware.cors import CORSMiddleware
