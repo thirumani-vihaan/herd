@@ -10,6 +10,7 @@ export default function ReportSlip({
     text: string;
     isForwarded: boolean;
     isFrequentlyForwarded: boolean;
+    image: File | null;
   }) => void;
   busy: boolean;
   samples: Sample[];
@@ -17,16 +18,18 @@ export default function ReportSlip({
   const [text, setText] = useState("");
   const [fwd, setFwd] = useState(false);
   const [freq, setFreq] = useState(false);
+  const [image, setImage] = useState<File | null>(null);
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (text.trim() && !busy)
+        if ((text.trim() || image) && !busy)
           onSubmit({
             text: text.trim(),
             isForwarded: fwd,
             isFrequentlyForwarded: freq,
+            image,
           });
       }}
       className="border border-rule bg-card shadow-plate"
@@ -46,11 +49,39 @@ export default function ReportSlip({
           id="msg"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={9}
+          rows={7}
           spellCheck={false}
           placeholder="Paste the message exactly as it arrived. Phone numbers, UPI handles and links are stripped before anything is stored."
           className="mt-2 w-full resize-none border border-rule bg-paper px-4 py-3 font-mono text-[13.5px] leading-relaxed text-ink outline-none placeholder:text-faint focus:border-ink"
         />
+        
+        <div className="mt-3 flex items-center gap-3">
+          <input
+            type="file"
+            id="image-upload"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => setImage(e.target.files?.[0] || null)}
+          />
+          <label
+            htmlFor="image-upload"
+            className="cursor-pointer border border-rule px-3 py-1.5 text-[12.5px] text-muted transition-colors hover:border-ink hover:text-ink flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+            </svg>
+            {image ? image.name : "Attach Screenshot (Optional)"}
+          </label>
+          {image && (
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              className="text-[12.5px] text-false hover:underline"
+            >
+              remove
+            </button>
+          )}
+        </div>
 
         <div className="mt-5 space-y-3">
           <Toggle
@@ -69,7 +100,7 @@ export default function ReportSlip({
 
         <button
           type="submit"
-          disabled={!text.trim() || busy}
+          disabled={!(text.trim() || image) || busy}
           className="mt-7 w-full bg-ink px-5 py-3.5 text-[14px] font-medium tracking-tight text-paper transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
         >
           {busy ? "Investigating…" : "Run the investigation"}

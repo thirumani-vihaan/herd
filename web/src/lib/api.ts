@@ -113,8 +113,10 @@ export interface AppContext {
  * The interface holds no institutional string of its own (ADR-0026) — not even
  * in its demo samples. Point HERD at another campus and this changes with it.
  */
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export async function loadContext(): Promise<AppContext> {
-  const res = await fetch("/context");
+  const res = await fetch(`${API_URL}/context`);
   if (!res.ok) throw new Error(`context unavailable (${res.status})`);
   return (await res.json()) as AppContext;
 }
@@ -124,14 +126,18 @@ export async function investigate(input: {
   isForwarded: boolean;
   isFrequentlyForwarded: boolean;
   reporterHash: string;
+  image?: File | null;
 }): Promise<IngestResult> {
   const body = new FormData();
   body.append("text", input.text);
   body.append("reporter_hash", input.reporterHash);
   body.append("is_forwarded", String(input.isForwarded));
   body.append("is_frequently_forwarded", String(input.isFrequentlyForwarded));
+  if (input.image) {
+    body.append("image", input.image);
+  }
 
-  const res = await fetch("/ingest", { method: "POST", body });
+  const res = await fetch(`${API_URL}/ingest`, { method: "POST", body });
   if (!res.ok) {
     // Surface what the service actually said. A bare status code sends the
     // reader hunting through logs for something the server already knows.
