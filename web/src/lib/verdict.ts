@@ -44,9 +44,9 @@ export const VERDICT: Record<Verdict, VerdictLook> = {
     text: "text-unverified",
     bg: "bg-unverified",
     border: "border-unverified",
-    plain: "No claim made",
+    plain: "Unverified",
     meaning:
-      "The evidence did not reach the bar in either direction, so nothing is being asserted.",
+      "No strong evidence was found to prove this claim true or false. Proceed with caution.",
   },
   OUT_OF_SCOPE: {
     hex: "#55524A",

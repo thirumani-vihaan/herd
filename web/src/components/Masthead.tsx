@@ -31,7 +31,7 @@ export default function Masthead({ ctx }: { ctx: AppContext | null }) {
           <Stat k="watching" v={ctx?.institution.short_name ?? "—"} />
           <Stat k="tiers" v="4" />
           <Stat k="agents" v={ctx ? String(ctx.agent_count) : "—"} />
-          <Stat k="verdict written by an llm" v="no" />
+          <Stat k="community note by" v="Universal AI" />
         </dl>
       </div>
     </header>
