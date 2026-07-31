@@ -39,3 +39,18 @@
     @apply border-t border-rule;
   }
 }
+
+@media print {
+  header, footer, .lg\:sticky, .feed-panel {
+    display: none !important;
+  }
+  main {
+    display: block !important;
+  }
+  .space-y-7 {
+    width: 100% !important;
+  }
+  body {
+    background: white !important;
+  }
+}
