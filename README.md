@@ -2,6 +2,8 @@
 
 **An immune system for campus misinformation.**
 
+🚀 **Live Deployment:** [https://herd-backend-ofrf.onrender.com](https://herd-backend-ofrf.onrender.com)
+
 A message lands in the class group: *"Amazon off-campus drive for 2026 batch —
 register here, limited slots."* It has a logo. It has a deadline. Forty people
 forward it before anyone checks. Some register. Some pay the ₹750 "registration
