@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, AlertTriangle, ShieldAlert, CheckCircle } from 'lucide-react';
+import { Activity, AlertTriangle, ShieldAlert, CheckCircle, FileText } from 'lucide-react';
+import { InoculationViewer } from './InoculationViewer';
 
 interface Alert {
   verdict: string;
   summary: string;
   velocity?: string;
+  inoculation_html?: string;
   timestamp: number;
 }
 
 export function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [connected, setConnected] = useState(false);
+  const [selectedHtml, setSelectedHtml] = useState<string | null>(null);
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:8000/ws');
@@ -114,12 +117,28 @@ export function Dashboard() {
                   <p className="text-slate-300 text-sm leading-relaxed">
                     {alert.summary}
                   </p>
+                  {alert.inoculation_html && (
+                    <button 
+                      onClick={() => setSelectedHtml(alert.inoculation_html!)}
+                      className="mt-3 text-xs flex items-center text-primary hover:text-blue-400 transition-colors bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 hover:bg-primary/20"
+                    >
+                      <FileText size={14} className="mr-1.5" />
+                      View Inoculation Card
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {selectedHtml && (
+        <InoculationViewer 
+          html={selectedHtml} 
+          onClose={() => setSelectedHtml(null)} 
+        />
+      )}
     </div>
   );
 }

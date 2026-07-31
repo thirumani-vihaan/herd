@@ -11,7 +11,7 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
@@ -135,11 +135,17 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     recent_reports = [now] * (3 if is_frequent else 1)
     velocity = calculate_velocity(recent_reports, now)
 
-    payload = {
+    payload: dict[str, Any] = {
         "verdict": result.aggregation.label.value,
         "summary": summary,
         "velocity": velocity
     }
+
+    if result.aggregation.label.value in ("FALSE", "MISLEADING"):
+        from app.intervene.delivery import generate_inoculation_card
+        payload["inoculation_html"] = generate_inoculation_card(
+            result.aggregation.label.value, summary, now.strftime("%Y-%m-%d")
+        )
 
     # Task 8: Deliver via Notifiers
     for notifier in container.notifiers:
