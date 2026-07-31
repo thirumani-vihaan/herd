@@ -3,13 +3,39 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-background text-white antialiased font-sans;
+    @apply bg-paper text-ink font-sans antialiased;
+    /* A faint paper grain. The surface should read as a record, not a screen. */
+    background-image: radial-gradient(
+      rgba(22, 21, 15, 0.022) 1px,
+      transparent 1px
+    );
+    background-size: 3px 3px;
+  }
+
+  ::selection {
+    background: #16150f;
+    color: #fbfaf7;
   }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-surface/80 backdrop-blur-md border border-border rounded-xl shadow-lg;
+  /* Every number in this interface is a measurement, so they all align. */
+  .num {
+    @apply font-mono tabular-nums;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    @apply font-mono text-[10px] uppercase tracking-[0.16em] text-faint;
+  }
+
+  .rule-t {
+    @apply border-t border-rule;
   }
 }

@@ -13,8 +13,9 @@ import time
 from dataclasses import dataclass, field
 
 # Suffixes where the registrable domain is three labels, not two. Without this,
-# `vnrvjiet.ac.in` reduces to `ac.in` and every Indian college looks like every
-# other one — which would make the lookalike check accuse all of them.
+# a domain like `somecollege.ac.in` reduces to `ac.in` and every Indian college
+# looks like every other one — which would make the lookalike check accuse all
+# of them.
 MULTI_PART_SUFFIXES = {
     "ac.in", "co.in", "edu.in", "org.in", "net.in", "gov.in", "res.in",
     "nic.in", "co.uk", "ac.uk", "org.uk", "gov.uk", "com.au", "edu.au",
@@ -54,7 +55,7 @@ def registrable(domain: str) -> str:
 
 
 def label_of(domain: str) -> str:
-    """The distinctive part: `vnrvjiet` from `vnrvjiet.ac.in`."""
+    """The distinctive part: `somecollege` from `somecollege.ac.in`."""
     reg = registrable(domain)
     return reg.split(".")[0] if reg else ""
 

@@ -84,10 +84,13 @@ def scan() -> list[str]:
                 continue
             low = text.lower()
             for term, origin in terms.items():
-                idx = low.find(term)
-                if idx == -1:
+                # Match on word boundaries. A cohort value like "mech" must not
+                # fire on the word "mechanisms"; a substring hit is a false
+                # accusation, and a linter nobody trusts gets switched off.
+                m = re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", low)
+                if not m:
                     continue
-                line = low[:idx].count("\n") + 1
+                line = low[: m.start()].count("\n") + 1
                 violations.append(
                     f"{rel}:{line}  contains '{term}' (from profile '{origin}') - "
                     f"read it from the Institution model instead"

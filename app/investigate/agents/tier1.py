@@ -5,11 +5,11 @@ wording. Tier 0 asks "does this read like a scam"; Tier 1 asks "who actually
 owns the thing it is asking you to trust".
 
 Every one of them is split into an offline half and a network half, and the
-split is load-bearing rather than defensive. `vnrvjiet-placements.com` is
-identifiable as an impersonation with no network at all — it is the *string*
-that gives it away. The network half only adds the registration date. So when
-the wifi dies mid-demo these agents get quieter, not silent, and the answer
-still arrives.
+split is load-bearing rather than defensive. A domain that appends `-placements`
+to an institution's own name is identifiable as an impersonation with no network
+at all — it is the *string* that gives it away. The network half only adds the
+registration date. So when the wifi dies mid-demo these agents get quieter, not
+silent, and the answer still arrives.
 """
 from __future__ import annotations
 
@@ -140,7 +140,7 @@ class _Tier1Agent(InvestigationAgent):
 
         for token in self._institution_tokens():
             if token in label and token != label:
-                # `vnrvjiet-placements.com`: the college's name is in there,
+                # `somecollege-placements.com`: the college's name is in there,
                 # but the college does not own it. A legitimate vendor running
                 # a campus portal will trip this too, which is the correct
                 # outcome — it is contradicting evidence, not a verdict, and

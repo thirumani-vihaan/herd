@@ -13,7 +13,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
-from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 
 from app.contracts import ForwardMarkers, Report, Strain
@@ -97,6 +97,76 @@ class IngestResponse(BaseModel):
     status: str
     verdict: str | None = None
     summary: str | None = None
+    result: dict[str, Any] | None = None
+
+
+def _serialise(result: Any, claim: Any, strain: Any, velocity: str,
+               report_count: int, summary: str) -> dict[str, Any]:
+    """Everything the interface needs to show its work.
+
+    A wrapper can only show an answer. This exposes the machinery: which agents
+    ran, what each one found and cited, how long it took, how belief moved tier
+    by tier, and which tiers the cascade never had to buy.
+    """
+    agg = result.aggregation
+    th = get_thresholds()
+    return {
+        "verdict": agg.label.value,
+        "summary": summary,
+        "bands": th.get("verdict.bands"),
+        "posterior_false": round(agg.posterior_false, 4),
+        "prior": round(agg.prior, 4),
+        "confidence": round(getattr(agg, "confidence", 0.0) or 0.0, 4),
+        "clamped": bool(agg.clamped),
+        "withheld_confirmation": bool(agg.downgraded_for_lack_of_confirmation),
+        "withheld_for_standing": bool(agg.downgraded_for_insufficient_standing),
+        "elapsed_ms": result.elapsed_ms,
+        "deadline_exceeded": result.deadline_exceeded,
+        "highest_tier_reached": result.highest_tier_reached,
+        "tiers_skipped": result.tiers_skipped,
+        "claim": {
+            "text": claim.text,
+            "type": claim.claim_type.value,
+            "language": claim.language,
+            "degraded": bool(getattr(claim, "degraded", False)),
+        },
+        "strain": {
+            "id": strain.id,
+            "report_count": report_count,
+            "velocity": velocity,
+            "first_seen": strain.first_seen.isoformat() if strain.first_seen else None,
+        },
+        "trace": [
+            {
+                "tier": t.tier,
+                "agents_run": list(t.agents_run),
+                "agents_skipped": list(t.agents_skipped),
+                "elapsed_ms": t.elapsed_ms,
+                "posterior_after": round(t.posterior_after, 4),
+                "label_after": t.label_after,
+                "exited": t.exited,
+            }
+            for t in result.trace
+        ],
+        "evidence": [
+            {
+                "agent": e.agent,
+                "tier": e.tier,
+                "status": e.status,
+                "signal": e.signal,
+                "strength": round(e.strength, 4),
+                "finding": e.finding,
+                "elapsed_ms": e.elapsed_ms,
+                "error": e.error,
+                "sources": [
+                    {"url": s.url, "title": s.title,
+                     "excerpt": s.excerpt, "kind": s.kind}
+                    for s in e.sources
+                ],
+            }
+            for e in result.evidence
+        ],
+    }
 
 
 async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | None, 
@@ -165,14 +235,9 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     timestamps = [r.received_at for r in reports if r.received_at] or [now]
     velocity = calculate_velocity(timestamps, now)
 
-    payload: dict[str, Any] = {
-        "tracking_id": tracking_id,
-        "verdict": result.aggregation.label.value,
-        "summary": summary,
-        "velocity": velocity,
-        "strain_id": strain.id,
-        "report_count": len(timestamps),
-    }
+    payload: dict[str, Any] = _serialise(
+        result, claim, strain, velocity, len(timestamps), summary)
+    payload["tracking_id"] = tracking_id
 
     if result.aggregation.label.value in ("FALSE", "MISLEADING"):
         from app.intervene.delivery import generate_inoculation_card
@@ -207,6 +272,66 @@ def _fallback_summary(result: Any) -> str:
     return f"{result.aggregation.label.value}: {reasons}"
 
 
+@app.get("/context")
+async def context():
+    """What the interface needs to know about the active institution.
+
+    The frontend must never contain an institutional string (ADR-0026), and
+    that includes its demo samples. They are templated here, from the profile,
+    so pointing HERD at a different campus changes the samples too.
+    """
+    if not container:
+        raise HTTPException(status_code=503, detail="service is still starting")
+
+    inst = container.institution
+    name = inst.short_name
+    official = inst.domains.official[0] if inst.domains.official else "example.edu"
+    lookalike = f"{inst.id}-placements.online"
+    currency = inst.locale.currency
+
+    return {
+        "institution": {
+            "id": inst.id,
+            "short_name": name,
+            "display_name": inst.display_name,
+            "official_domain": official,
+        },
+        "agent_count": sum(
+            len(v) for v in container.build_cascade(ForwardMarkers()).tiers.values()
+        ),
+        "samples": [
+            {
+                "label": "Fee scam",
+                "forwarded": True,
+                "text": (
+                    f"URGENT: Your {name} exam hall ticket has been blocked due to a "
+                    f"pending fee. Pay {currency} 2500 immediately to UPI "
+                    f"{inst.id}.fees@okaxis within 2 hours or your registration will "
+                    f"be cancelled. Contact 9876543210."
+                ),
+            },
+            {
+                "label": "Fake placement",
+                "forwarded": True,
+                "text": (
+                    f"TCS is conducting an off-campus drive exclusively for {name} "
+                    f"students. Registration fee {currency} 750. Limited seats. "
+                    f"Register at {lookalike} before tonight."
+                ),
+            },
+            {
+                "label": "Ordinary notice",
+                "forwarded": False,
+                "text": (
+                    "The placement training session for final year students will be "
+                    "held on Friday at 10:00 AM in the seminar hall. Attendance is "
+                    "mandatory."
+                ),
+            },
+        ],
+    }
+
+
 @app.post("/ingest", response_model=IngestResponse)
 async def ingest_report(
     background_tasks: BackgroundTasks,
@@ -217,7 +342,13 @@ async def ingest_report(
     image: UploadFile | None = None,
 ):
     now = time.time()
-    
+
+    if not text.strip() and image is None:
+        raise HTTPException(
+            status_code=400,
+            detail="a report must carry text or an image",
+        )
+
     # Clean cache
     cache_ttl = float(get_thresholds().i("ingest.idempotency_window_s"))
     expired = [k for k, v in _cache.items() if now - v[1] > cache_ttl]
@@ -255,11 +386,32 @@ async def ingest_report(
     tracking_id = uuid.uuid4().hex
     _cache[idemp_key] = (tracking_id, now)
 
-    background_tasks.add_task(
-        process_pipeline,
-        tracking_id, text, image_bytes, reporter_hash,
-        is_forwarded, is_frequently_forwarded, image_sha256
-    )
+    # Run inline. Warm latency is well under two seconds, and a caller that
+    # gets the finished investigation back can render it without guessing when
+    # a background task landed.
+    try:
+        payload = await process_pipeline(
+            tracking_id, text, image_bytes, reporter_hash,
+            is_forwarded, is_frequently_forwarded, image_sha256
+        )
+    except Exception as exc:
+        # A failed investigation must not be cached as a successful one, or a
+        # retry of the same message would return the failure forever.
+        _cache.pop(idemp_key, None)
+        logger.exception("investigation failed for %s", tracking_id)
+        raise HTTPException(
+            status_code=503,
+            detail=f"the investigation could not be completed: {exc}",
+        ) from exc
+
+    if isinstance(payload, dict):
+        return IngestResponse(
+            tracking_id=tracking_id,
+            status="accepted",
+            verdict=payload.get("verdict"),
+            summary=payload.get("summary"),
+            result=payload,
+        )
 
     return IngestResponse(
         tracking_id=tracking_id,

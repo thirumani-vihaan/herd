@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
+import re
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -306,6 +307,11 @@ class Strain(Frozen):
 Signal = Literal["supports", "contradicts", "neutral"]
 AgentStatus = Literal["ok", "unavailable", "not_applicable"]
 
+# Query-string credentials, in any of the shapes upstream APIs use.
+_SECRET_RE = re.compile(
+    r"(?i)\b(key|api_?key|access_?token|token|secret|password)=[^\s&'\"]+"
+)
+
 
 class Evidence(Frozen):
     """What an agent returns. Never a verdict (ADR-0012)."""
@@ -322,6 +328,20 @@ class Evidence(Frozen):
     elapsed_ms: int = Field(default=0, ge=0)
     error: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
+
+    @field_validator("error", "finding", mode="after")
+    @classmethod
+    def _no_secrets(cls, v: str | None) -> str | None:
+        """Strip credentials out of anything an agent reports.
+
+        Agent errors are surfaced verbatim in the UI, which is the right call —
+        a reader should see why a check could not run. But an upstream client
+        error carries the full request URL, and that URL carries the API key.
+        Redact at the contract boundary so no agent can leak one by accident.
+        """
+        if not v:
+            return v
+        return _SECRET_RE.sub(r"\1=REDACTED", v)
 
     @model_validator(mode="after")
     def _cite_or_stay_silent(self) -> "Evidence":

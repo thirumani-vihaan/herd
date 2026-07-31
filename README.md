@@ -137,22 +137,33 @@ measurement contradicted the design:
 
 ## Current state
 
-**100% complete.** The backend engine and frontend dashboard are fully integrated and demo-ready.
+Everything below is measured on this repository, not estimated.
 
 | | |
 |---|---|
-| Tests | **174 passing** |
-| Agents | **9 of 9** built (Tier 0 to Tier 3) |
-| UI | **Done** (Vite + React + Tailwind + WebSocket) |
-| API | **Done** (FastAPI) |
+| Tests | **198 passing** (`pytest tests/ -q`, ~35s) |
+| Agents | **9 of 9** returning evidence across Tiers 0–3 |
+| Wiring check | **9 of 9 alive** (`tools/check_wiring.py` invokes every agent) |
+| Corpus accuracy | **38% exact label**, **13 of 18** scams caught as FALSE, **0** genuine notices libelled |
+| Warm investigation | **~1.2 s** end to end, all four tiers |
+| API | FastAPI, returns the full trace inline |
+| UI | Vite + React + Tailwind, renders the whole judgement |
 
 What works today:
-1. **The Backend Engine:** Redaction → claim extraction (multimodal) → strain recognition → four-tier investigation cascade with asymmetric early exit → deterministic log-odds aggregation → cited verdicts + prose generation.
-2. **Live Feed:** An event-driven WebSocket system streaming autonomous investigation results in real-time.
-3. **The Web UI:** A premium, glassmorphic React dashboard supporting drag-and-drop ingestion and rendering an Inoculation Viewer modal for fast pre-bunking.
 
-Full status, the complete 71-task ledger, and every design decision with its
-reasoning: **[`HANDOFF.md`](HANDOFF.md)**.
+1. **The engine.** Redaction → claim extraction (multimodal) → strain
+   recognition → four-tier cascade with asymmetric early exit → deterministic
+   log-odds aggregation → cited verdict. The label is arithmetic; the LLM only
+   writes the prose, and the system runs without it.
+2. **Real memory.** Reports, claims and strains are persisted. The second
+   report of the same rumour is recognised as the same strain, and velocity is
+   computed from stored timestamps — never projected from a flag.
+3. **The dashboard.** Every agent that looked at the message, what it found,
+   what it cited, and the exact path belief took through the tiers — including
+   the tiers that never had to be bought.
+
+Full status, the task ledger, and every design decision with its reasoning:
+**[`HANDOFF.md`](HANDOFF.md)**.
 Demo preparation: **[`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md)**.
 
 ---
@@ -162,43 +173,100 @@ Demo preparation: **[`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md)**.
 Python 3.11 · FastAPI · Gemini (multimodal OCR + extraction + prose) ·
 LangGraph (investigation cascade) · `paraphrase-multilingual-MiniLM-L12-v2`
 (code-mixed strain embedding) · Chroma (herd memory) · SciPy (tiered spread fit) ·
-SQLite/WAL behind storage interfaces · React + WebSocket dashboard
+SQLite/WAL behind storage interfaces · React + Vite + Tailwind dashboard
+
+---
 
 ## Setup
 
+### Prerequisites
+
+| | |
+|---|---|
+| Python | **3.11** (3.12+ is not supported by the pinned wheels) |
+| Node.js | **18+** (for the dashboard only) |
+| Disk | ~500 MB — the multilingual embedding model downloads on first run |
+
+### 1. Clone and install the backend
+
 ```powershell
+git clone https://github.com/thirumani-vihaan/hackathon.git herd
+cd herd
+
 python -m venv venv
+venv\Scripts\python.exe -m pip install --upgrade pip
 venv\Scripts\python.exe -m pip install -r requirements.txt
-copy .env.example .env     # add your keys, pick HERD_INSTITUTION
 ```
 
-### Run it
+On macOS or Linux the interpreter is `venv/bin/python` — every command below
+works identically with that path substituted.
 
-Start the FastAPI backend:
+### 2. Configure
+
 ```powershell
-venv\Scripts\python.exe -m uvicorn app.api.ingest:app --reload --port 8000
+copy .env.example .env
 ```
 
-Start the React UI:
+Then open `.env`. Only one value is genuinely required:
+
+| Key | Required? | What happens without it |
+|---|---|---|
+| `REPORTER_HASH_SALT` | **yes** | Set it to any random string. It is the salt for pseudonymous reporter hashing. |
+| `HERD_INSTITUTION` | pre-filled | Must match a filename stem in `config/institutions/`. |
+| `GEMINI_API_KEY` | optional | Claim extraction falls back to a deterministic parser and the summary is written from the evidence itself. **Verdicts are unaffected** — no verdict is ever produced by a language model. |
+| `GOOGLE_SAFE_BROWSING_API_KEY` | optional | The URL-safety agent reports `unavailable` instead of checking the blocklist. Every other agent still runs. |
+| `TELEGRAM_BOT_TOKEN` | optional | The Telegram ingestion path is disabled. The web path is unaffected. |
+
+Missing optional keys never break an investigation. An agent that cannot do its
+job says so, in the open, in the evidence ledger — it does not guess.
+
+### 3. Run the backend
+
+```powershell
+venv\Scripts\python.exe -m uvicorn app.api.ingest:app --port 8000
+```
+
+The **first** start downloads the embedding model and takes a minute or two.
+Wait for `Application startup complete.` before sending anything — the model is
+warmed during startup precisely so that the first real investigation is fast.
+
+### 4. Run the dashboard
+
+In a second terminal:
+
 ```powershell
 cd web
 npm install
 npm run dev
 ```
 
-Navigate to `http://localhost:5173` to test the End-to-End flow.
+Open **http://localhost:5173**. Vite proxies `/ingest` to the backend on port
+8000, so no CORS or extra configuration is needed. Paste a message, or click one
+of the three built-in samples, and press **Run the investigation**.
 
-You can also run the offline driver scripts directly:
+### Without a browser
+
 ```powershell
 venv\Scripts\python.exe tools\demo_run.py                  # investigate a scam
 venv\Scripts\python.exe tools\demo_run.py --offline        # network blocked
 venv\Scripts\python.exe tools\demo_run.py --text "..."     # your own claim
 ```
 
+### Verify the install
+
+```powershell
+venv\Scripts\python.exe -m pytest tests\ -q                # 198 tests
+venv\Scripts\python.exe tools\check_wiring.py              # every agent, invoked
+```
+
+`check_wiring.py` calls all nine agents for real and fails if any of them
+degrades for a reason that is not a missing network dependency. It exists
+because a broad `except` in each agent means a contract violation would
+otherwise be silently swallowed — the suite once ran green over two dead tiers.
+
 ### Reproduce the numbers
 
 ```powershell
-venv\Scripts\python.exe -m pytest tests\ -q                # 169 tests
 venv\Scripts\python.exe tools\eval_tier0.py --with-tier1   # confusion matrix
 venv\Scripts\python.exe tools\calibrate_aggregation.py     # re-derive constants
 ```
@@ -206,6 +274,15 @@ venv\Scripts\python.exe tools\calibrate_aggregation.py     # re-derive constants
 Every tunable lives in `config/thresholds.yaml`; **no numeric literal is allowed
 in `app/`**, and an AST test enforces it — so the constants above are genuinely
 derived rather than hand-tuned in place.
+
+### Troubleshooting
+
+| Symptom | Cause |
+|---|---|
+| `error while attempting to bind ... 8000` | A previous backend is still running. Stop it, or pass `--port 8001` and update `web/vite.config.ts`. |
+| Dashboard shows *could not investigate* | The backend is not up yet, or is still downloading the model on first run. |
+| `OpenWebResearch — unavailable` in the ledger | Expected without a Gemini key or when rate-limited. It is the terminal tier; the verdict does not depend on it. |
+| Install fails on `tokenizers` / `numpy` | You are not on Python 3.11. Check `venv\Scripts\python.exe --version`. |
 
 ### Port it to another campus
 
