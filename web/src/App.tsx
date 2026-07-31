@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   investigate,
   loadContext,
@@ -11,12 +11,15 @@ import VerdictPlate from "./components/VerdictPlate";
 import CascadeStrip from "./components/CascadeStrip";
 import EvidenceLedger from "./components/EvidenceLedger";
 import StrainPanel from "./components/StrainPanel";
+import FeedPanel, { type FeedEntry } from "./components/FeedPanel";
 
 export default function App() {
   const [data, setData] = useState<Investigation | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<AppContext | null>(null);
+  const [feed, setFeed] = useState<FeedEntry[]>([]);
+  const seq = useRef(0);
 
   useEffect(() => {
     loadContext()
@@ -36,8 +39,24 @@ export default function App() {
         ...v,
         reporterHash: `web_${Math.random().toString(36).slice(2, 10)}`,
       });
-      if (res.result) setData(res.result);
-      else setError("The investigation returned no result.");
+      if (res.result) {
+        const r = res.result;
+        setData(r);
+        setFeed((prev) =>
+          [
+            {
+              seq: (seq.current += 1),
+              at: Date.now(),
+              verdict: r.verdict,
+              claim: r.claim?.text || v.text,
+              strainId: r.strain.id,
+              count: r.strain.report_count,
+              velocity: r.strain.velocity,
+            },
+            ...prev,
+          ].slice(0, 10)
+        );
+      } else setError("The investigation returned no result.");
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Could not reach the investigator."
@@ -55,6 +74,7 @@ export default function App() {
         <div className="space-y-6 lg:sticky lg:top-8">
           <ReportSlip onSubmit={run} busy={busy} samples={ctx?.samples ?? []} />
           {data && <StrainPanel data={data} />}
+          <FeedPanel entries={feed} />
         </div>
 
         <div className="space-y-7">
