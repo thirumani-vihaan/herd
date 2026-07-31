@@ -13,7 +13,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import FastAPI, UploadFile, Form, BackgroundTasks
+from fastapi import FastAPI, UploadFile, Form, BackgroundTasks, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from app.contracts import ForwardMarkers, Strain
@@ -43,6 +43,45 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Allow CORS for UI dev
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                pass
+
+manager = ConnectionManager()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 
 class IngestResponse(BaseModel):
@@ -90,15 +129,25 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
     else:
         summary = "Investigation complete."
     
+    # Calculate simple velocity for UI demo
+    from app.spread.velocity import calculate_velocity
+    # Generate mock recent timestamps for the demo
+    recent_reports = [now] * (3 if is_frequent else 1)
+    velocity = calculate_velocity(recent_reports, now)
+
     payload = {
         "verdict": result.aggregation.label.value,
-        "summary": summary
+        "summary": summary,
+        "velocity": velocity
     }
 
     # Task 8: Deliver via Notifiers
     for notifier in container.notifiers:
         if notifier.available():
             await notifier.send(payload)
+            
+    # Also broadcast to active WebSocket dashboard
+    await manager.broadcast(payload)
             
     return payload
 
