@@ -27,10 +27,45 @@ export default function App() {
       .catch(() => setCtx(null));
   }, []);
 
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const wsUrl = baseUrl.replace(/^http/, "ws") + "/ws";
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.verdict && payload.strain) {
+          setFeed((prev) => {
+            // Prevent duplicates if local investigate() already added it
+            if (prev.some(p => p.strainId === payload.strain.id && Math.abs(p.at - Date.now()) < 5000)) return prev;
+            return [
+              {
+                seq: (seq.current += 1),
+                at: Date.now(),
+                verdict: payload.verdict,
+                claim: payload.claim?.text || "New report received",
+                strainId: payload.strain.id,
+                count: payload.strain.report_count,
+                velocity: payload.strain.velocity,
+              },
+              ...prev,
+            ].slice(0, 10);
+          });
+        }
+      } catch (e) {
+        console.error("WebSocket message error:", e);
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
   async function run(v: {
     text: string;
     isForwarded: boolean;
     isFrequentlyForwarded: boolean;
+    image?: File | null;
   }) {
     setBusy(true);
     setError(null);
