@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: herd-backend
+    env: python
+    buildCommand: "pip install -r requirements.lock.txt"
+    startCommand: "python -m uvicorn app.api.ingest:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_SAFE_BROWSING_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_ID
+        sync: false
