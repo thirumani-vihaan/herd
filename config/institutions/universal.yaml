@@ -1,0 +1,31 @@
+id: universal
+display_name: "Global Sentinel"
+short_name: "Universal"
+
+locale:
+  primary_language: en
+  code_mixed: []
+  timezone: UTC
+  currency: USD
+
+domains:
+  official: []
+  email:
+    verified: false
+    values: []
+
+sources: []
+official_channels: []
+
+cohorts:
+  verified: false
+  dimensions: []
+
+calendar:
+  verified: false
+  windows: []
+
+payments:
+  verified: false
+  official_upi_handles: []
+  collects_fees_via_messaging: false
