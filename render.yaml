@@ -17,3 +17,5 @@ services:
         sync: false
       - key: FEATHERLESS_MODEL
         value: "Qwen/Qwen2.5-7B-Instruct"
+      - key: HERD_INSTITUTION
+        value: "universal"
