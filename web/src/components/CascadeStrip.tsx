@@ -12,12 +12,19 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
   const byTier = new Map(data.trace.map((t) => [t.tier, t]));
 
   return (
-    <section className="border border-rule bg-card shadow-plate">
+    <section className="relative overflow-hidden border-2 border-rule bg-card shadow-plate animate-rise" style={{ animationDelay: '0.1s' }}>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-multiply opacity-20">
+        <div className="h-24 w-full bg-gradient-to-b from-transparent via-[#8B8779] to-transparent blur-md animate-scan"></div>
+      </div>
       <header className="flex items-baseline justify-between border-b border-rule px-7 py-5">
         <h3 className="font-display text-[19px] tracking-tight">
           The cascade
         </h3>
-        <p className="label">cheapest evidence first · stops when it can</p>
+        <p className="label">
+          {data.tiers_skipped > 0 
+            ? `${data.tiers_skipped} tier${data.tiers_skipped > 1 ? 's' : ''} skipped` 
+            : "0 tiers skipped"} · cheapest evidence first
+        </p>
       </header>
 
       <ol>
@@ -28,9 +35,10 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
           return (
             <li
               key={tier}
-              className={`grid grid-cols-[3.2rem_1fr] gap-x-5 border-b border-rulesoft px-7 py-6 last:border-0 ${
-                spent ? "" : "opacity-45"
+              className={`grid grid-cols-[3.2rem_1fr] gap-x-5 border-b border-rulesoft px-7 py-6 last:border-0 animate-fade-in transition-colors hover:bg-rulesoft/30 ${
+                spent ? "animate-pulse-soft" : "opacity-45"
               }`}
+              style={{ animationDelay: `${0.2 + tier * 0.15}s` }}
             >
               <div className="pt-[2px]">
                 <div
@@ -50,10 +58,12 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
                     {TIER_NAMES[tier]}
                   </h4>
                   {spent ? (
-                    <p className="label">
-                      <span className="text-ink">{t!.elapsed_ms} ms</span> ·
+                    <p className="label flex items-center gap-1.5">
+                      <span className="text-ink font-mono">{t!.elapsed_ms} ms</span> ·
                       belief {t!.posterior_after.toFixed(3)} ·{" "}
-                      {t!.label_after}
+                      <span className="animate-stamp-in text-xs font-bold" style={{ color: L.hex, animationDelay: `${0.4 + tier * 0.15}s` }}>
+                        {t!.label_after}
+                      </span>
                       {t!.exited && " · exited here"}
                     </p>
                   ) : (
@@ -66,7 +76,7 @@ export default function CascadeStrip({ data }: { data: Investigation }) {
                 </p>
 
                 {spent && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="mt-3 flex flex-wrap gap-1.5 animate-type-reveal" style={{ animationDelay: `${0.3 + tier * 0.15}s` }}>
                     {t!.agents_run.map((a) => (
                       <span
                         key={a}

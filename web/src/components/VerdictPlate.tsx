@@ -30,15 +30,18 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
 
   return (
     <section
-      className="animate-rise border border-rule bg-card shadow-plate"
-      style={{ borderTop: `3px solid ${L.hex}` }}
+      className="relative animate-rise border-x border-b border-rule bg-card shadow-plate"
+      style={{ borderTop: `6px double ${L.hex}` }}
     >
+      <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-multiply opacity-10">
+        <div className="h-16 w-full bg-gradient-to-b from-transparent via-[#8B8779] to-transparent blur-md animate-scan" style={{ animationDelay: "1.5s" }}></div>
+      </div>
       <div className="px-8 py-10 sm:px-14 sm:py-12">
       <div className="flex items-start justify-between gap-8">
         <div className="min-w-0">
           <p className="label">the verdict</p>
           <h2
-            className="font-display mt-3 text-[clamp(3.2rem,8.5vw,6rem)] leading-[0.86] tracking-tight"
+            className="font-display mt-3 text-[clamp(3.2rem,8.5vw,6rem)] leading-[0.86] tracking-tight animate-stamp-in uppercase"
             style={{ color: L.hex }}
           >
             {L.plain}
@@ -55,12 +58,14 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
           </div>
           <div>
             <dt className="label">investigated in</dt>
-            <dd className="num text-[15px] text-ink">{data.elapsed_ms} ms</dd>
+            <dd className="num text-[15px] text-ink">
+              {data.elapsed_ms} ms <span className="text-faint ml-1">· tier {data.highest_tier_reached}</span>
+            </dd>
           </div>
           <div>
-            <dt className="label">deepest tier</dt>
-            <dd className="num text-[15px] text-ink">
-              {data.highest_tier_reached}
+            <dt className="label">claim type</dt>
+            <dd className="num text-[15px] text-ink capitalize">
+              {data.claim?.type || "Unknown"} <span className="uppercase text-faint ml-1">· {data.claim?.language || "UNK"}</span>
             </dd>
           </div>
           {isAdmin && (
@@ -86,7 +91,7 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
 
       <BeliefAxis data={data} />
 
-      {(abstained || data.withheld_confirmation || data.deadline_exceeded) && (
+      {(abstained || data.withheld_confirmation || data.deadline_exceeded || data.withheld_for_standing || data.clamped || data.claim?.degraded) && (
         <div className="mt-8 space-y-3 border-t border-rulesoft pt-6">
           {abstained && (
             <Note title="Abstaining is a result, not a failure">
@@ -108,6 +113,21 @@ export default function VerdictPlate({ data }: { data: Investigation }) {
               The verdict reflects the evidence actually gathered.
             </Note>
           )}
+          {data.withheld_for_standing && (
+            <Note title="Insufficient standing">
+              This institution is not the authoritative source for this claim, so the system downgraded the verdict to avoid confirming third-party rumors.
+            </Note>
+          )}
+          {data.clamped && (
+            <Note title="Confidence clamped">
+              Mathematical certainty hit a safety boundary. The probability was clamped to avoid declaring absolute truth about an uncertain world.
+            </Note>
+          )}
+          {data.claim?.degraded && (
+            <Note title="Degraded claim">
+              The language model failed to extract the claim natively. The system fell back to raw heuristics to avoid dropping the report.
+            </Note>
+          )}
         </div>
       )}
       </div>
@@ -123,7 +143,7 @@ function Note({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
       <span className="mt-[7px] h-px w-6 shrink-0 bg-faint" />
       <p className="text-[13.5px] leading-relaxed text-muted">
         <span className="font-medium text-ink">{title}.</span> {children}

@@ -14,17 +14,34 @@ import StrainPanel from "./components/StrainPanel";
 import FeedPanel, { type FeedEntry } from "./components/FeedPanel";
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [data, setData] = useState<Investigation | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ctx, setCtx] = useState<AppContext | null>(null);
-  const [feed, setFeed] = useState<FeedEntry[]>([]);
+  const [feed, setFeed] = useState<FeedEntry[]>(() => {
+    try {
+      const stored = localStorage.getItem("herd_feed");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const seq = useRef(0);
 
   useEffect(() => {
     loadContext()
       .then(setCtx)
       .catch(() => setCtx(null));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("herd_feed", JSON.stringify(feed));
+  }, [feed]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -68,6 +85,7 @@ export default function App() {
     image?: File | null;
   }) {
     setBusy(true);
+    setData(null);
     setError(null);
     try {
       const res = await investigate({
@@ -101,8 +119,25 @@ export default function App() {
     }
   }
 
+  if (showSplash) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-paper text-ink transition-opacity duration-500">
+        <div className="relative flex flex-col items-center">
+          <div className="absolute -inset-10 animate-scan mix-blend-multiply opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" style={{ backgroundSize: '100px 100px' }}></div>
+          <h1 className="font-display text-[clamp(4rem,10vw,8rem)] tracking-tight flex">
+            <span className="animate-slide-left" style={{ animationDelay: '0.1s' }}>H</span>
+            <span className="animate-slide-left" style={{ animationDelay: '0.3s' }}>E</span>
+            <span className="animate-slide-right" style={{ animationDelay: '0.5s' }}>R</span>
+            <span className="animate-slide-right" style={{ animationDelay: '0.7s' }}>D</span>
+          </h1>
+          <p className="font-mono text-sm tracking-[0.2em] uppercase text-muted mt-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>Immune System</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen animate-fade-in">
       <Masthead ctx={ctx} />
 
       <main className="mx-auto grid max-w-[1240px] gap-7 px-6 py-11 sm:px-10 lg:grid-cols-[minmax(320px,390px)_1fr] lg:items-start">
@@ -156,21 +191,26 @@ export default function App() {
 
 function Working() {
   return (
-    <section className="animate-rise border border-rule bg-card px-8 py-20 text-center shadow-plate">
-      <div className="mx-auto flex w-fit items-end gap-1.5" aria-hidden>
+    <section className="animate-rise border-2 border-rule bg-card px-8 py-24 text-center shadow-plate relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-[0.08]">
+        <div className="h-full w-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] animate-scan" style={{ backgroundSize: '100px 100px' }}></div>
+      </div>
+      <div className="relative mx-auto flex w-fit items-end gap-3" aria-hidden>
         {[0, 1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className="w-2 animate-pulse bg-ink"
-            style={{
-              height: `${10 + i * 6}px`,
-              animationDelay: `${i * 140}ms`,
-            }}
-          />
+          <div key={i} className="flex flex-col items-center gap-2">
+            <span
+              className="w-10 border border-ink bg-ink/10 animate-pulse-soft"
+              style={{
+                height: `${24 + i * 16}px`,
+                animationDelay: `${i * 150}ms`,
+              }}
+            />
+            <span className="font-mono text-[10px] tracking-widest text-faint animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>T{i}</span>
+          </div>
         ))}
       </div>
-      <p className="mt-6 text-[14px] text-ink">Working through the tiers</p>
-      <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-muted">
+      <h2 className="relative mt-8 font-display text-3xl text-ink tracking-tight animate-pulse-soft">Consulting the cascade...</h2>
+      <p className="relative mx-auto mt-3 max-w-sm text-[14px] leading-relaxed text-muted">
         Reading the wording, then the infrastructure, then the official record —
         stopping at the first tier that settles it.
       </p>
@@ -202,7 +242,7 @@ function Standby() {
         {steps.map(([n, title, body]) => (
           <li
             key={n}
-            className="grid grid-cols-[2.6rem_1fr] gap-x-4 border-t border-rulesoft py-5"
+            className="grid grid-cols-[2.6rem_1fr] gap-x-4 border-t border-rulesoft py-5 transition-colors hover:bg-rulesoft/50 px-4 -mx-4 rounded"
           >
             <span className="num text-[12px] text-faint">TIER {n}</span>
             <div>

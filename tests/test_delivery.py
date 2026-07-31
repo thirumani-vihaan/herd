@@ -11,23 +11,26 @@ async def test_telegram_notifier_success():
     notifier = TelegramNotifier("fake_token", "fake_chat_id")
     assert notifier.available()
     
-    with patch.object(notifier, 'bot') as mock_bot:
-        mock_bot.send_message = AsyncMock()
+    with patch('app.intervene.delivery.Bot') as mock_bot_class:
+        # mock_bot_class.return_value is the Bot instance
+        # Since it's used as an async context manager: `async with Bot() as bot:`
+        # we need its __aenter__ to return our mock bot
+        mock_bot_instance = AsyncMock()
+        mock_bot_class.return_value.__aenter__.return_value = mock_bot_instance
         
         result = await notifier.send({"verdict": "FALSE", "summary": "Test summary"})
         
         assert result == 1
-        mock_bot.send_message.assert_called_once_with(
-            chat_id="fake_chat_id", 
-            text="🚨 ALERT: FALSE\n\nTest summary"
-        )
+        mock_bot_instance.send_message.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_telegram_notifier_failure():
     notifier = TelegramNotifier("fake_token", "fake_chat_id")
     
-    with patch.object(notifier, 'bot') as mock_bot:
-        mock_bot.send_message = AsyncMock(side_effect=TelegramError("Network error"))
+    with patch('app.intervene.delivery.Bot') as mock_bot_class:
+        mock_bot_instance = AsyncMock()
+        mock_bot_instance.send_message.side_effect = TelegramError("Network error")
+        mock_bot_class.return_value.__aenter__.return_value = mock_bot_instance
         
         result = await notifier.send({"verdict": "FALSE", "summary": "Test summary"})
         

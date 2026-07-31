@@ -36,11 +36,11 @@ class TelegramNotifier(Notifier):
                 verdict = alert.get('verdict', 'UNKNOWN')
                 summary = alert.get('summary', '')
                 claim_text = alert.get('claim', {}).get('text', 'No claim text found.')
-                
-                message = f"🚨 ALERT: {verdict}\n\nCLAIM:\n\"{claim_text}\"\n\nANALYSIS:\n{summary}"
+                emoji = "🔴" if verdict == "FALSE" else "🟡" if verdict == "MISLEADING" else "🟢" if verdict == "TRUE" else "⚪️"
+                message = f"<b>{emoji} NEW VERDICT: {verdict}</b>\n\n<b>Claim:</b>\n<i>\"{claim_text}\"</i>\n\n<b>Analysis:</b>\n{summary}"
             
             async with Bot(self.token) as bot:
-                await bot.send_message(chat_id=self.admin_chat_id, text=message)
+                await bot.send_message(chat_id=self.admin_chat_id, text=message, parse_mode="HTML")
             return 1
         except TelegramError as e:
             logger.error(f"Telegram delivery failed: {e}")

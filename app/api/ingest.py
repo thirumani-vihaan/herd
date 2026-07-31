@@ -202,6 +202,10 @@ async def process_pipeline(tracking_id: str, text: str, image_bytes: bytes | Non
         institution_short_name=inst.short_name,
         claim_id=f"clm_{tracking_id[:12]}"
     )
+    
+    if not claim.text.strip():
+        raise ValueError("Could not extract any verifiable text from the provided image or report. Please try again.")
+        
     await container.store.save_claim(claim)
 
     # Real strain assignment (ADR-0007) rather than a fresh single-report strain,

@@ -38,8 +38,11 @@ export default function StrainPanel({ data }: { data: Investigation }) {
         {repeat ? (
           <>
             This message has been reported{" "}
-            <span className="num font-medium">{s.report_count}</span> times.
-            They were recognised as the same thing, so it was investigated once.
+            <span className="num font-medium">{s.report_count}</span> times since{" "}
+            <span className="num font-medium text-ink">
+              {s.first_seen ? new Date(s.first_seen).toLocaleDateString() : "initially seen"}
+            </span>
+            . They were recognised as the same thing, so it was investigated once.
           </>
         ) : (
           <>First time this message has been seen here.</>
