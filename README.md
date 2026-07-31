@@ -170,10 +170,21 @@ Demo preparation: **[`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md)**.
 
 ## Stack
 
-Python 3.11 · FastAPI · Gemini (multimodal OCR + extraction + prose) ·
-LangGraph (investigation cascade) · `paraphrase-multilingual-MiniLM-L12-v2`
+Python 3.11 · FastAPI · **Featherless.ai** (open-source LLM inference via Qwen for
+verdict prose synthesis) · Gemini (multimodal OCR + claim extraction + embeddings) ·
+LangGraph (investigation cascade) · Gemini Embeddings
 (code-mixed strain embedding) · Chroma (herd memory) · SciPy (tiered spread fit) ·
 SQLite/WAL behind storage interfaces · React + Vite + Tailwind dashboard
+
+### Multi-provider AI architecture
+
+HERD deliberately separates AI concerns across providers:
+
+| Provider | Role | Why |
+|---|---|---|
+| **Featherless.ai** | Verdict prose synthesis | Open-source model (Qwen2.5) writes transparent, auditable explanations. The verdict label is deterministic — not LLM-dependent — so prose is a presentation layer, and using an open model makes it inspectable. |
+| **Gemini** | Claim extraction + embeddings | Multimodal OCR for screenshot-first ingestion. Gemini embeddings for strain recognition across code-mixed languages. |
+| **Deterministic** | Verdict computation | Log-odds aggregation produces the label arithmetically. No LLM ever decides truth. |
 
 ---
 
@@ -214,6 +225,7 @@ Then open `.env`. Only one value is genuinely required:
 | `REPORTER_HASH_SALT` | **yes** | Set it to any random string. It is the salt for pseudonymous reporter hashing. |
 | `HERD_INSTITUTION` | pre-filled | Must match a filename stem in `config/institutions/`. |
 | `GEMINI_API_KEY` | optional | Claim extraction falls back to a deterministic parser and the summary is written from the evidence itself. **Verdicts are unaffected** — no verdict is ever produced by a language model. |
+| `FEATHERLESS_API_KEY` | **recommended** | Powers the verdict prose synthesis via Featherless.ai (Qwen2.5). Without it, prose falls back to Gemini, then to a deterministic summary. |
 | `GOOGLE_SAFE_BROWSING_API_KEY` | optional | The URL-safety agent reports `unavailable` instead of checking the blocklist. Every other agent still runs. |
 | `TELEGRAM_BOT_TOKEN` | optional | The Telegram ingestion path is disabled. The web path is unaffected. |
 
