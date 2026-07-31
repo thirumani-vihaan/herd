@@ -320,6 +320,19 @@ class SqliteStore(Store):
             " ORDER BY created_at DESC LIMIT 1", (strain_id, institution_id))
         return Verdict.model_validate_json(rows[0]["doc"]) if rows else None
 
+    async def override_verdict(self, strain_id: str, institution_id: str, label: str, overridden_by: str) -> None:
+        v = await self.get_verdict(strain_id, institution_id)
+        if not v:
+            return
+        
+        from app.contracts import VerdictLabel
+        updated = v.model_copy(update={
+            "label": VerdictLabel(label),
+            "overridden_by": overridden_by
+        })
+        await self.save_verdict(updated)
+        await self.set_sighting_verdict(strain_id, institution_id, label)
+
     async def recent_verdicts(self, institution_id: str, limit: int = 50) -> list[Verdict]:
         rows = await self._rows(
             "SELECT doc FROM verdicts WHERE institution_id=?"

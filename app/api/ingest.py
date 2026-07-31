@@ -417,3 +417,41 @@ async def ingest_report(
         tracking_id=tracking_id,
         status="accepted"
     )
+@app.post("/override/{strain_id}")
+async def override_verdict(
+    strain_id: str,
+    label: str,
+    secret: str,
+    req: Request
+):
+    if secret != "admin_secret":
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+    
+    container: AppContainer = req.app.state.container
+    institution_id = container.config.institution_id
+    
+    await container.store.override_verdict(
+        strain_id=strain_id, 
+        institution_id=institution_id, 
+        label=label, 
+        overridden_by="human_override"
+    )
+    
+    # Broadcast the updated verdict
+    v = await container.store.get_verdict(strain_id, institution_id)
+    if v:
+        strain = await container.store.get_strain(strain_id)
+        payload = {
+            "verdict": v.label.value,
+            "claim": {"text": "VERDICT OVERRIDDEN BY ADMIN"},
+            "strain": {
+                "id": strain.id if strain else strain_id,
+                "report_count": strain.report_count if strain else 0,
+                "velocity": getattr(strain, "velocity", 0.0)
+            },
+            "overridden": True
+        }
+        manager = req.app.state.ws_manager
+        await manager.broadcast(payload)
+        
+    return {"status": "ok"}

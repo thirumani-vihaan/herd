@@ -116,6 +116,9 @@ class Store(ABC):
     async def get_verdict(self, strain_id: str, institution_id: str) -> Any | None: ...
 
     @abstractmethod
+    async def override_verdict(self, strain_id: str, institution_id: str, label: str, overridden_by: str) -> None: ...
+
+    @abstractmethod
     async def save_alert(self, alert: Any) -> None: ...
 
     @abstractmethod

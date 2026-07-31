@@ -84,6 +84,12 @@ class FakeStore(Store):
             raise self.raise_on_get_verdict
         return self.verdicts.get((strain_id, institution_id))
 
+    async def override_verdict(self, strain_id: str, institution_id: str, label: str, overridden_by: str) -> None:
+        verdict = self.verdicts.get((strain_id, institution_id))
+        if verdict:
+            verdict.label = label
+            verdict.overridden_by = overridden_by
+
     async def save_alert(self, alert: Any) -> None:
         self.alerts.append(alert)
 
