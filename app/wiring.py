@@ -11,7 +11,8 @@ from app.contracts import Institution, ForwardMarkers
 from app.institution import get_institution
 from app.clients.embeddings import SentenceTransformerEmbeddings
 from app.clients.vector import ChromaVectorIndex
-from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel
+from app.clients.gemini import GeminiClient
+from app.interfaces import Store, HttpFetcher, VectorIndex, EmbeddingModel, LLMClient
 from app.investigate.aggregate import Aggregator
 from app.investigate.cascade import Cascade
 from app.investigate.agents import (
@@ -34,6 +35,7 @@ class Container:
     aggregator: Aggregator
     index: VectorIndex
     embeddings: EmbeddingModel
+    llm: LLMClient
 
     def build_cascade(self, markers: ForwardMarkers | None = None) -> Cascade:
         """Construct a fresh Cascade for one investigation."""
@@ -94,6 +96,7 @@ def build_container(institution_id: str | None = None) -> Container:
     store = SqliteStore(Path(db_path_str))
     embeddings = SentenceTransformerEmbeddings()
     index = ChromaVectorIndex(persist_dir=str(Path(db_path_str).parent / 'chroma'))
+    llm = GeminiClient(fetcher, settings.gemini_api_key, settings.gemini_model)
     
     return Container(
         settings=settings,
@@ -104,4 +107,5 @@ def build_container(institution_id: str | None = None) -> Container:
         aggregator=aggregator,
         index=index,
         embeddings=embeddings,
+        llm=llm,
     )

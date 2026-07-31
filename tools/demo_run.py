@@ -29,7 +29,7 @@ from app.investigate.agents import (ContactForensics, DomainForensics,  # noqa: 
                                     FraudHeuristics, StrainPrior,
                                     TemplateProvenance, URLSafety)
 from app.investigate.cascade import Cascade  # noqa: E402
-from app.perceive.extract import deterministic_extract  # noqa: E402
+from app.perceive.extract import deterministic_extract, extract_claim  # noqa: E402
 from app.perceive.redact import redact_text  # noqa: E402
 from app.storage.sqlite_store import SqliteStore  # noqa: E402
 
@@ -42,24 +42,7 @@ FLAGSHIP = (
 )
 
 
-def build_cascade(institution, store, fetcher, markers):
-    th = get_thresholds()
-    agents = [
-        FraudHeuristics(official_domains=set(institution.domains.official or [])),
-        TemplateProvenance(markers),
-        StrainPrior(store, institution.id),
-        DomainForensics(institution, fetcher),
-        URLSafety(institution, fetcher),
-        ContactForensics(institution, fetcher),
-    ]
-    return Cascade(
-        agents, Aggregator.from_thresholds(th),
-        exit_bars={0: th.f("cascade.exit.tier0"), 1: th.f("cascade.exit.tier1"),
-                   2: th.f("cascade.exit.tier2")},
-        false_exit_multiplier=th.f("cascade.false_exit_multiplier"),
-        unverified_exit_multiplier=th.f("cascade.unverified_exit_multiplier"),
-        deadline_ms=th.i("cascade.deadline_ms"),
-        confirming_agents=set(th.get("verdict.confirming_agents")))
+from app.wiring import build_container
 
 
 async def main(text: str, offline: bool) -> int:
@@ -78,9 +61,19 @@ async def main(text: str, offline: bool) -> int:
     print("\n[1] PERCEIVE")
     redacted, removed = redact_text(text)
     print(f"    redacted {len(removed)} PII item(s): {removed or 'none'}")
-    claim = deterministic_extract(redacted, report_id="demo-report",
-                                  institution_id=institution.id,
-                                  claim_id="demo-claim")
+    
+    container = build_container(institution.id)
+    await container.store.init()
+    
+    claim = await extract_claim(
+        llm=None if offline else container.llm,
+        text=redacted,
+        image_bytes=None,
+        report_id="demo-report",
+        institution_id=institution.id,
+        institution_short_name=institution.short_name,
+        claim_id="demo-claim"
+    )
     print(f"    claim_type   : {claim.claim_type.value}")
     print(f"    confidence   : {claim.extraction_confidence:.2f}")
     e = claim.entities
@@ -97,8 +90,7 @@ async def main(text: str, offline: bool) -> int:
     print(f"    strain       : {strain.id} (new — nothing to match against yet)")
 
     print("\n[3] INVESTIGATE")
-    fetcher = BlockedFetcher() if offline else HttpxFetcher()
-    cascade = build_cascade(institution, store, fetcher, ForwardMarkers(
+    cascade = container.build_cascade(ForwardMarkers(
         is_forwarded=True, is_frequently_forwarded=True))
     result = await cascade.run(claim, strain)
 
@@ -134,8 +126,20 @@ async def main(text: str, offline: bool) -> int:
     print(f"  elapsed     : {result.elapsed_ms} ms")
     print("=" * 74)
 
-    if hasattr(fetcher, "aclose"):
-        await fetcher.aclose()
+    print("\n[5] VERDICT PROSE")
+    if offline or not container.llm.available():
+        print("    [skipped] network offline or no API key")
+    else:
+        prose = await container.llm.write_prose(
+            label=agg.label.value,
+            evidence=result.evidence,
+            claim=claim
+        )
+        print(f"    summary     : {prose.get('summary')}")
+        print(f"    reasoning   : {prose.get('reasoning')}")
+
+    if hasattr(container.fetcher, "aclose"):
+        await container.fetcher.aclose()
     return 0
 
 
