@@ -72,7 +72,7 @@ class Container:
             OfficialChannel(self.institution, self.index, self.embeddings),
             
             # Tier 3
-            OpenWebResearch(self.fetcher, self.featherless)
+            OpenWebResearch(self.fetcher)
         ]
         
         return Cascade(

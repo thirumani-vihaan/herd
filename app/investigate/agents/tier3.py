@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from app.config import get_settings, get_thresholds
 from app.contracts import Claim, Evidence, Source, Strain
 from app.interfaces import InvestigationAgent, HttpFetcher
-from app.clients.featherless import FeatherlessClient
 
 
 def _ms(started: float) -> int:
@@ -20,17 +19,17 @@ class OpenWebResearch(InvestigationAgent):
     tier = 3
     correlation_group = "independent"
 
-    def __init__(self, fetcher: HttpFetcher, featherless: FeatherlessClient) -> None:
+    def __init__(self, fetcher: HttpFetcher) -> None:
         self.fetcher = fetcher
-        self.featherless = featherless
         self.settings = get_settings()
         th = get_thresholds()
         self.strength = th.f("aggregation.reliability.OpenWebResearch")
-        self.tavily_api_key = self.settings.tavily_api_key
+        self.model = self.settings.gemini_model
+        self.api_key = self.settings.gemini_api_key
         self.timeout = th.f("agents.open_web_research.timeout_s")
 
     def applies_to(self, claim: Claim) -> bool:
-        return bool(self.tavily_api_key and self.featherless.available())
+        return bool(self.api_key)
 
     async def run(self, claim: Claim, strain: Strain) -> Evidence:
         started = time.perf_counter()
@@ -52,66 +51,37 @@ class OpenWebResearch(InvestigationAgent):
                 finding="no text to research", sources=[],
                 correlation_group=self.correlation_group, elapsed_ms=_ms(started))
 
-        # Step 1: Retrieve Live Web Data (The "R" in RAG) via Tavily
-        tavily_url = "https://api.tavily.com/search"
-        tavily_payload = {
-            "api_key": self.tavily_api_key,
-            "query": f"Fact-check: {claim.text}",
-            "search_depth": "basic",
-            "max_results": 3
-        }
-        
-        search_resp = await self.fetcher.post_json(
-            tavily_url, json=tavily_payload, timeout=self.timeout
-        )
-        
-        results = search_resp.get("results", [])
-        if not results:
-            return Evidence(
-                agent=self.name, institution_id=claim.institution_id, tier=self.tier,
-                status="ok", signal="neutral", strength=0.0,
-                finding="web research returned no results", sources=[],
-                correlation_group=self.correlation_group, elapsed_ms=_ms(started))
-
-        # Step 2: Bundle the Context
-        context_parts = []
-        sources = []
-        for i, res in enumerate(results):
-            title = res.get("title", f"Source {i+1}")
-            url = res.get("url", "")
-            content = res.get("content", "")
-            if not url or not content:
-                continue
-                
-            context_parts.append(f"Source {i+1}: {title}\nURL: {url}\nContent: {content}")
-            sources.append(Source(
-                url=url,
-                title=title,
-                excerpt="",
-                retrieved_at=datetime.now(timezone.utc),
-                kind="web"
-            ))
-            
-        bundled_context = "\n\n".join(context_parts)
-        
-        # Step 3: Generate the AI Judgement (The "G" in RAG) via Featherless
         prompt = (
-            f"Fact-check this claim: \"{claim.text}\"\n"
-            f"Here is the context retrieved from the live open web:\n"
-            f"---\n{bundled_context}\n---\n"
-            "Based STRICTLY on the provided web context, decide if the results SUPPORT or CONTRADICT the claim, "
-            "or if the context is NEUTRAL. \n"
-            "Return JSON with exactly two keys: \n"
-            "1. 'signal' (must be 'supports', 'contradicts', or 'neutral')\n"
-            "2. 'finding' (a summary of the facts found, citing them as Source 1, Source 2, etc.)"
+            f"Fact-check this claim concerning {claim.institution_id}:\n"
+            f"\"{claim.text}\"\n\n"
+            "Search the web. Decide if the search results SUPPORT or CONTRADICT the claim, "
+            "or if it is NEUTRAL (unverifiable). "
+            "Return JSON with exactly two keys: 'signal' (must be 'supports', 'contradicts', or 'neutral') "
+            "and 'finding' (a summary of the facts found, with citations). "
+            "Do not state a final true/false verdict, just summarize the evidence direction."
         )
-        
-        llm_resp = await self.featherless.chat(prompt, timeout=self.timeout)
-        
-        # Step 4: Parse and Return
+
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{self.model}:generateContent?key={self.api_key}")
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "tools": [{"googleSearch": {}}],
+            "generationConfig": {
+                "responseMimeType": "application/json"
+            }
+        }
+
+        resp = await self.fetcher.post_json(
+            url,
+            json=payload,
+            timeout=self.timeout
+        )
+
         try:
-            # Clean possible markdown formatting
-            raw_text = llm_resp.strip()
+            cand = resp["candidates"][0]
+            raw_text = cand["content"]["parts"][0]["text"]
+            
+            # The model might return markdown json blocks
             if raw_text.startswith("```json"):
                 raw_text = raw_text.split("```json")[1].rsplit("```", 1)[0].strip()
             elif raw_text.startswith("```"):
@@ -121,9 +91,25 @@ class OpenWebResearch(InvestigationAgent):
             signal = parsed.get("signal", "neutral")
             if signal not in ("supports", "contradicts", "neutral"):
                 signal = "neutral"
+                
             finding = parsed.get("finding", "Completed web research.")
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(f"unexpected llm response format: {exc}") from exc
+            
+            sources = []
+            grounding = cand.get("groundingMetadata", {})
+            chunks = grounding.get("groundingChunks", [])
+            for i, chunk in enumerate(chunks):
+                web = chunk.get("web", {})
+                if web and "uri" in web:
+                    sources.append(Source(
+                        url=web["uri"],
+                        title=web.get("title", f"Web Source {i+1}"),
+                        excerpt="",
+                        retrieved_at=datetime.now(timezone.utc),
+                        kind="web"
+                    ))
+                    
+        except (KeyError, IndexError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"unexpected gemini response format: {exc}") from exc
 
         # Cite-or-stay-silent: grounding can come back empty even when the model
         # asserts a direction. An uncited direction is exactly the thing this
