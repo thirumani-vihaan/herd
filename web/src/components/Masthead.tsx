@@ -25,15 +25,6 @@ export default function Masthead({ ctx }: { ctx: AppContext | null }) {
             message the way a careful person would — cheapest checks first —
             and stops the moment it can honestly stop.
           </p>
-          {ctx?.global_stats && (
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-false/30 bg-false/10 px-3 py-1.5 text-[12px] font-medium text-false">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-false opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-false"></span>
-              </span>
-              Live Intercepts: {ctx.global_stats.total_intercepts.toLocaleString()} | Est. Fraud Prevented: ${ctx.global_stats.estimated_fraud_blocked.toLocaleString()}
-            </div>
-          )}
         </div>
 
         <dl className="flex flex-wrap gap-x-9 gap-y-3">
