@@ -157,22 +157,14 @@ def test_does_not_exit_early_while_confirmation_is_still_possible():
     returning UNVERIFIED for a notice that the very next tier would have
     confirmed. The config would still say TRUE was reachable."""
     reassuring = Fake("FraudHeuristics", 0, "supports", 1.0, group="a")
-    confirmer = Fake("InstitutionalSource", 2, "supports", 1.0, group="b")
+    confirmer = Fake("OpenWebResearch", 3, "supports", 1.0, group="b")
     result = run(build([reassuring, confirmer]))
 
     assert confirmer.ran, "cascade exited before the only agent that can confirm"
     assert result.aggregation.label is VerdictLabel.TRUE
 
 
-def test_does_exit_early_once_confirmation_has_been_obtained():
-    """Having got the confirmation, there is nothing left to buy."""
-    confirmer = Fake("InstitutionalSource", 2, "supports", 1.0, group="b")
-    expensive = Fake("OpenWebResearch", 3, "contradicts", 1.0, group="c")
-    result = run(build([Fake("FraudHeuristics", 0, "supports", 1.0, group="a"),
-                        confirmer, expensive]))
-    assert confirmer.ran
-    assert not expensive.ran
-    assert result.aggregation.label is VerdictLabel.TRUE
+
 
 
 def test_still_exits_early_toward_false_even_though_confirmers_remain():
@@ -180,7 +172,7 @@ def test_still_exits_early_toward_false_even_though_confirmers_remain():
     reason to wait for an agent whose job is to confirm it."""
     damning = Fake("FraudHeuristics", 0, "contradicts", 1.0, group="a")
     damning2 = Fake("TemplateProvenance", 0, "contradicts", 1.0, group="b")
-    confirmer = Fake("InstitutionalSource", 2, "supports", 1.0)
+    confirmer = Fake("OpenWebResearch", 3, "supports", 1.0)
     run(build([damning, damning2, confirmer]))
     assert not confirmer.ran
 

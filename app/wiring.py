@@ -21,7 +21,7 @@ from app.recognise.strain import StrainEngine
 from app.investigate.agents import (
     ContactForensics, DomainForensics, FraudHeuristics,
     TemplateProvenance, URLSafety, StrainPrior,
-    InstitutionalSource, OfficialChannel, OpenWebResearch
+    OpenWebResearch
 )
 from app.storage.sqlite_store import SqliteStore
 
@@ -67,9 +67,7 @@ class Container:
             URLSafety(self.institution, self.fetcher),
             ContactForensics(self.institution, self.fetcher),
 
-            # Tier 2
-            InstitutionalSource(self.institution, self.index, self.embeddings),
-            OfficialChannel(self.institution, self.index, self.embeddings),
+            # Tier 2 is empty
 
             # Tier 3
             OpenWebResearch(self.fetcher)

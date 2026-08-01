@@ -82,24 +82,8 @@ def test_unavailable_agent_contributes_nothing(agg):
     assert a.posterior_false == pytest.approx(agg.aggregate([]).posterior_false)
 
 
-def test_institutional_absence_is_capped_but_presence_is_not(agg, th):
-    cap = th.f("aggregation.caps.InstitutionalSource.contradicts")
-    against = agg.aggregate([ev("InstitutionalSource", "contradicts", 1.0)])
-    assert against.contributions[0].cap_applied == cap
-    assert abs(against.contributions[0].delta_log_odds) == pytest.approx(
-        cap * th.f("aggregation.reliability.InstitutionalSource") * agg.scale, rel=1e-3)
-
-    for_ = agg.aggregate([ev("InstitutionalSource", "supports", 1.0)])
-    assert abs(for_.contributions[0].delta_log_odds) > abs(
-        against.contributions[0].delta_log_odds)
 
 
-def test_official_channel_absence_weighs_more_than_institutional_absence(agg, th):
-    """A careers page is a more complete record than a college website, so its
-    silence means more. If these two ever become equal, the ordering that
-    justified having both agents has been lost."""
-    assert (th.f("aggregation.caps.OfficialChannel.contradicts")
-            > th.f("aggregation.caps.InstitutionalSource.contradicts"))
 
 
 def test_strain_prior_alone_can_never_reach_a_verdict(agg, th):
@@ -182,7 +166,7 @@ def test_true_requires_a_confirming_source(agg):
 def test_a_confirming_source_unlocks_true(agg):
     a = agg.aggregate([
         ev("FraudHeuristics", "supports", 0.5),
-        ev("InstitutionalSource", "supports", 1.0),
+        ev("OpenWebResearch", "supports", 1.0),
     ])
     assert a.label is VerdictLabel.TRUE
     assert not a.downgraded_for_lack_of_confirmation
@@ -193,7 +177,7 @@ def test_confirming_source_that_found_nothing_does_not_unlock_true(agg):
     That is the opposite of confirmation and must not be mistaken for it."""
     a = agg.aggregate([
         ev("FraudHeuristics", "supports", 1.0),
-        ev("InstitutionalSource", "contradicts", 0.1),
+        ev("OpenWebResearch", "contradicts", 0.1),
     ])
     assert a.label is VerdictLabel.UNVERIFIED
 
@@ -202,7 +186,7 @@ def test_unavailable_confirming_source_does_not_unlock_true(agg):
     """A crashed agent must not be able to confirm a claim by being broken."""
     a = agg.aggregate([
         ev("FraudHeuristics", "supports", 1.0),
-        ev("InstitutionalSource", "supports", 1.0, status="unavailable"),
+        ev("OpenWebResearch", "supports", 1.0, status="unavailable"),
     ])
     assert a.label is VerdictLabel.UNVERIFIED
 
@@ -298,8 +282,8 @@ def test_decisiveness_peaks_mid_band_and_bottoms_at_edges(agg, th):
 
 def test_explain_mentions_caps_and_discounts(agg):
     a = agg.aggregate([
-        ev("InstitutionalSource", "contradicts", 1.0, group="absence"),
-        ev("OfficialChannel", "contradicts", 1.0, group="absence"),
+        ev("StrainPrior", "contradicts", 1.0, group="absence"),
+        ev("InstitutionalSource", "contradicts", 1.0, group="absence")
     ])
     lines = explain(a.contributions)
     assert any("capped" in l for l in lines)
